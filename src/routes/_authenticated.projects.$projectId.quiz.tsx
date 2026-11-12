@@ -1,11 +1,12 @@
 import { Link, createFileRoute, notFound, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, ArrowRight, CheckCircle2, Loader2, RotateCcw, Trophy, XCircle } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { getProject } from "@/data/projects";
 import { accessStatusQuery } from "@/lib/access/access-queries";
+import { clearAccessToken, storeAccessToken } from "@/lib/access/access-token";
 import { submitQuiz } from "@/lib/access/access.functions";
 import { QUIZ_PASS_MIN_CORRECT, type QuizGrade } from "@/lib/access/quiz-grading";
 import { saveQuizResult } from "@/lib/onboarding";
@@ -44,16 +45,6 @@ function QuizPage() {
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  // A pass moves straight on to email verification.
-  useEffect(() => {
-    if (!result?.passed) return;
-    const t = window.setTimeout(
-      () => navigate({ to: "/projects/$projectId/verify", params: { projectId: project.id } }),
-      1800,
-    );
-    return () => window.clearTimeout(t);
-  }, [result, navigate, project.id]);
-
   const q = questions[index];
   if (!q) {
     return (
@@ -90,12 +81,19 @@ function QuizPage() {
       setSubmitting(true);
       setSubmitError(null);
       try {
-        const grade = await submitQuiz({ data: { projectId: project.id, answers } });
-        if (grade.passed) {
+        const { accessToken, ...grade } = await submitQuiz({ data: { projectId: project.id, answers } });
+        // The server replaced any earlier access for this project, so drop the old token too.
+        clearAccessToken(project.id);
+        queryClient.removeQueries({ queryKey: accessStatusQuery(project.id).queryKey });
+        if (grade.passed && accessToken) {
+          storeAccessToken(project.id, accessToken);
           saveQuizResult(project.id, { score: grade.score, total: grade.total, completedAt: new Date().toISOString() });
+          setResult(grade);
+          // A pass (2+ correct) opens email verification right away; the verify page re-checks the pass on the server.
+          await navigate({ to: "/projects/$projectId/verify", params: { projectId: project.id } });
+          return;
         }
-        await queryClient.invalidateQueries({ queryKey: accessStatusQuery(project.id).queryKey });
-        setResult(grade);
+        setResult({ ...grade, passed: false });
       } catch (e) {
         setSubmitError(e instanceof Error ? e.message : "Your answers couldn't be checked. Please try again.");
       } finally {
