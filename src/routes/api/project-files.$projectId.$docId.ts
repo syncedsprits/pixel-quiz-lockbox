@@ -4,8 +4,9 @@ import { getDocument } from "@/data/projects";
 
 /**
  * Serves a protected reference document. Every request is checked on the server:
- * the caller's HTTP-only access cookie must belong to a session that passed the quiz
- * AND verified an email OTP for this exact project. Preview and download both use this route.
+ * the caller must be signed in (bearer token), and this browser session's access token must
+ * belong to that same user's session that passed the quiz AND verified an email OTP for this
+ * exact project. Preview and download both use this route.
  */
 export const Route = createFileRoute("/api/project-files/$projectId/$docId")({
   server: {
@@ -17,8 +18,10 @@ export const Route = createFileRoute("/api/project-files/$projectId/$docId")({
         const doc = getDocument(params.projectId, params.docId);
         if (!doc) return deny(404, "File not found.");
 
-        const { getAccessSession, hasFileAccess } = await import("@/lib/access/access.server");
-        const session = await getAccessSession(params.projectId);
+        const { getAccessSession, hasFileAccess, userIdFromRequest } = await import("@/lib/access/access.server");
+        const userId = await userIdFromRequest(request);
+        if (!userId) return deny(401, "Sign in to open project files.");
+        const session = await getAccessSession(params.projectId, userId);
         if (!hasFileAccess(session)) {
           return deny(403, "Pass the onboarding quiz and verify your email to open this file.");
         }

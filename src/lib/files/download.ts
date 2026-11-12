@@ -27,7 +27,8 @@ export async function responseError(res: Response, fallback: string): Promise<st
 
 /** Downloads a same-origin file under its original name. Throws if the file can't be fetched. */
 export async function downloadUrl(url: string, name: string, mime: string) {
-  const res = await fetch(url, { credentials: "same-origin", cache: "no-store" });
+  const { fetchProtectedFile } = await import("@/lib/access/protected-fetch");
+  const res = await fetchProtectedFile(url);
   if (!res.ok) throw new Error(await responseError(res, "Download failed"));
   const blob = await res.blob();
   downloadBlob(new Blob([blob], { type: mime }), name);

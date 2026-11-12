@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getProject } from "@/data/projects";
 import type { ProjectDocument } from "@/data/types";
+import { fetchProtectedFile } from "@/lib/access/protected-fetch";
 import { downloadBlob, downloadUrl, responseError } from "@/lib/files/download";
 import { extractContent, ExtractionError } from "@/lib/files/extract";
 import { extractionSummary, type Extracted } from "@/lib/files/extracted";
@@ -92,7 +93,7 @@ export function FilePreviewDialog({
         let blob: Blob;
         let extracted: Extracted;
         if (target.source === "reference") {
-          const res = await fetch(target.doc.url, { credentials: "same-origin", cache: "no-store" });
+          const res = await fetchProtectedFile(target.doc.url);
           if (!res.ok) throw new Error(await responseError(res, "The file couldn't be loaded"));
           const buffer = await res.arrayBuffer();
           blob = new Blob([buffer], { type: target.doc.mimeType });

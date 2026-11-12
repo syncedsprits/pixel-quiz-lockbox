@@ -1,4 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
+
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 
 import { getProject } from "@/data/projects";
@@ -57,8 +59,9 @@ FORMAT
 }
 
 export const askAssistant = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((d) => inputSchema.parse(d))
-  .handler(async ({ data }): Promise<AssistantReply> => {
+  .handler(async ({ data, context }): Promise<AssistantReply> => {
     const project = getProject(data.projectId);
     if (!project) return { ok: false, error: "This project doesn't exist." };
 
@@ -68,7 +71,7 @@ export const askAssistant = createServerFn({ method: "POST" })
 
     // Locked documents are used only for visitors who passed this project's quiz + email code.
     const protectedProject = project.quiz.length > 0;
-    const unlocked = !protectedProject || hasFileAccess(await getAccessSession(project.id));
+    const unlocked = !protectedProject || hasFileAccess(await getAccessSession(project.id, context.userId));
     const documentsLocked = protectedProject && !unlocked && project.documents.length > 0;
 
     try {
