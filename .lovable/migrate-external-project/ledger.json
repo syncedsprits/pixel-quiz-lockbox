@@ -1,9 +1,8 @@
 [
-  {"capability":"code","source":"pixel-perfect-replay zip","outcome":"migrate","status":"done","next_action":"none"},
-  {"capability":"schema/records","source":"none (browser-only demo data)","outcome":"none needed","status":"done","next_action":"none"},
-  {"capability":"auth","source":"demo sign-in in browser","outcome":"kept unchanged by request","status":"done","next_action":"none"},
-  {"capability":"trans-shield original 5 reference files","source":"assets of the original project","outcome":"migrate to private storage","status":"pending","next_action":"user re-attaches the five original files"},
-  {"capability":"two new trans-shield files","source":"user upload","outcome":"private storage","status":"done","next_action":"none"},
-  {"capability":"email OTP delivery","source":"Lovable Cloud email sign-in","outcome":"built, sending switched off","status":"blocked","next_action":"user sets up a sender email domain; then customise sign-in emails to include the code and turn sending on"},
-  {"capability":"verification","source":"-","outcome":"quiz, lock, denial, invalid email, wrong code, countdown, resend lock tested","status":"partial","next_action":"test correct code once code emails work"}
+  {"capability":"code","source":"screenshot-to-spark zip","outcome":"migrate","status":"done","next_action":"none"},
+  {"capability":"schema","source":"previous Cloud project","outcome":"recreated (access sessions bound to user, knowledge index)","status":"done","next_action":"none"},
+  {"capability":"auth","source":"demo sign-in","outcome":"replaced with real Cloud email/password accounts","status":"partial","next_action":"user decides who gets accounts"},
+  {"capability":"trans-shield 7 documents","source":"old project's private storage (not in zip)","outcome":"private bucket project-documents created","status":"pending","next_action":"user attaches the seven files"},
+  {"capability":"email OTP delivery","source":"Gmail connector","outcome":"connected and tested with a real inbox","status":"verified","next_action":"none"},
+  {"capability":"verification","source":"-","outcome":"login, quiz 0-4, OTP send/expiry/resend/wrong/correct, file lock, logout tested","status":"partial","next_action":"test file preview and AI Assistant once documents are uploaded"}
 ]
