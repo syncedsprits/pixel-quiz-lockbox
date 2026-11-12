@@ -1,6 +1,8 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 
+import { supabase } from "@/integrations/supabase/client";
+import { clearAllAccessTokens } from "@/lib/access/access-token";
 import { authAdapter } from "./index";
 import type { AuthAdapter, AuthSession, SignInInput, SignInResult } from "./types";
 
@@ -29,13 +31,26 @@ export function AuthProvider({
 
   useEffect(() => {
     let active = true;
-    adapter.getSession().then((s) => {
-      if (!active) return;
-      setSession(s);
-      setStatus(s ? "authenticated" : "unauthenticated");
+    const refresh = () =>
+      adapter.getSession().then((s) => {
+        if (!active) return;
+        setSession(s);
+        setStatus(s ? "authenticated" : "unauthenticated");
+      });
+    void refresh();
+    // Keep the UI in step with sign-in, sign-out and expired sessions (also from other tabs).
+    const { data } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "SIGNED_OUT") {
+        clearAllAccessTokens();
+        setSession(null);
+        setStatus("unauthenticated");
+      } else if (event === "SIGNED_IN" || event === "USER_UPDATED") {
+        void refresh();
+      }
     });
     return () => {
       active = false;
+      data.subscription.unsubscribe();
     };
   }, [adapter]);
 
