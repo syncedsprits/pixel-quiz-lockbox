@@ -55,6 +55,9 @@ export const cloudAdapter: AuthAdapter = {
     if (error) {
       const m = error.message.toLowerCase();
       if (m.includes("already registered")) return { ok: false, error: "An account with this email already exists. Sign in instead." };
+      if (m.includes("not allowed") || m.includes("invalid")) {
+        return { ok: false, error: "This email address can't receive email. Please use a real address." };
+      }
       if (m.includes("password")) return { ok: false, error: "Choose a stronger password." };
       return { ok: false, error: "Your account couldn't be created. Please try again." };
     }
