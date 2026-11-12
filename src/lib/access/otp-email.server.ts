@@ -10,8 +10,7 @@ function otpEmailHtml(code: string): string {
   return `<!doctype html><html><body style="margin:0;background:#ffffff;font-family:Arial,Helvetica,sans-serif;color:#1f2433">
 <div style="max-width:480px;margin:0 auto;padding:32px 24px">
 <p style="font-size:15px;margin:0 0 16px">Hello,</p>
-<p style="font-size:15px;margin:0 0 12px">Your one-time verification code is:</p>
-<p style="font-size:32px;font-weight:700;letter-spacing:8px;margin:0 0 20px;color:#4b3fd6">${code}</p>
+<p style="font-size:18px;margin:0 0 20px">Your verification code is: <strong style="font-size:32px;font-weight:700;letter-spacing:6px;color:#4b3fd6;white-space:nowrap">${code}</strong></p>
 <p style="font-size:14px;margin:0 0 12px">This code is valid for ${OTP_TTL_SECONDS} seconds. Do not share this code with anyone.</p>
 <p style="font-size:14px;margin:0 0 20px;color:#5b6172">If you did not request this code, please ignore this email.</p>
 <p style="font-size:14px;margin:0">Regards,<br>Project Verification System</p>

@@ -23,9 +23,7 @@ export function otpEmailText(code: string): string {
   return [
     "Hello,",
     "",
-    "Your one-time verification code is:",
-    "",
-    code,
+    `Your verification code is: ${code}`,
     "",
     `This code is valid for ${OTP_TTL_SECONDS} seconds. Do not share this code with anyone.`,
     "",
