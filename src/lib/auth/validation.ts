@@ -16,6 +16,12 @@ export const passwordSchema = z
 
 export const signInSchema = z.object({ email: emailSchema, password: passwordSchema });
 
+/** Demo entry screen: any non-empty email and any non-empty password are accepted. */
+export const entrySchema = z.object({
+  email: z.string().trim().min(1, "Enter your email address").max(254, "Email is too long"),
+  password: z.string().min(1, "Enter your password").max(128, "Password is too long"),
+});
+
 /** "kaviya.dharshini@acme.com" -> "Kaviya Dharshini" */
 export function nameFromEmail(email: string): string {
   const local = email.split("@")[0] ?? "";

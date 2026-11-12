@@ -3,14 +3,16 @@ import type { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { clearAllAccessTokens } from "@/lib/access/access-token";
 import type { AuthAdapter, AuthSession } from "./types";
-import { emailSchema, nameFromEmail, signInSchema } from "./validation";
+import { emailSchema, entrySchema, nameFromEmail, signInSchema } from "./validation";
 
 /**
- * Real sign-in through Lovable Cloud accounts. Credentials are checked by the auth server;
- * there is no client-side fallback, so an unknown email or wrong password never gets in.
+ * Demo entry: any non-empty email + password opens a fresh anonymous Lovable Cloud session.
+ * The entered email is kept only as a display label; project quiz/OTP access stays bound to
+ * that session's user id on the server.
  */
 export function toSession(user: User, issuedAt = new Date().toISOString()): AuthSession {
-  const email = (user.email ?? "").toLowerCase();
+  const entered = typeof user.user_metadata?.["entered_email"] === "string" ? (user.user_metadata["entered_email"] as string) : "";
+  const email = (user.email || entered).trim().toLowerCase();
   const metaName = typeof user.user_metadata?.["full_name"] === "string" ? (user.user_metadata["full_name"] as string) : "";
   return { mode: "production", issuedAt, user: { id: user.id, email, name: metaName.trim() || nameFromEmail(email) } };
 }
@@ -34,11 +36,11 @@ export const cloudAdapter: AuthAdapter = {
   },
 
   async signIn(input) {
-    const parsed = signInSchema.safeParse(input);
-    if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid credentials" };
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email: parsed.data.email.trim().toLowerCase(),
-      password: parsed.data.password,
+    const parsed = entrySchema.safeParse(input);
+    if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Enter your email and password" };
+    // The password is not checked or stored; it only has to be non-empty.
+    const { data, error } = await supabase.auth.signInAnonymously({
+      options: { data: { entered_email: parsed.data.email.trim().toLowerCase() } },
     });
     if (error || !data.user) return { ok: false, error: friendlyAuthError(error?.message ?? "") };
     return { ok: true, session: toSession(data.user) };
