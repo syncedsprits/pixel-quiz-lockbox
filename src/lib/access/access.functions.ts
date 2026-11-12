@@ -1,8 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
-import { deleteCookie, setCookie } from "@tanstack/react-start/server";
 import { z } from "zod";
 
 import { getProject } from "@/data/projects";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import {
   OTP_MAX_SENDS_PER_WINDOW,
   OTP_MAX_VERIFY_ATTEMPTS,
@@ -14,7 +14,7 @@ import {
   canResend,
   isOtpExpired,
 } from "./otp-rules";
-import { gradeQuiz, maskEmail } from "./quiz-grading";
+import { gradeQuiz, maskEmail, type QuizGrade } from "./quiz-grading";
 
 const projectIdSchema = z.string().min(1).max(64);
 
@@ -41,20 +41,21 @@ function requireProtectedProject(projectId: string) {
 
 /** Grades the quiz on the server. Only a pass (2+ correct) creates an access session. */
 export const submitQuiz = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ projectId: projectIdSchema, answers: z.array(z.number().int()).max(50) }).parse(d))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }): Promise<QuizGrade & { accessToken?: string }> => {
     const project = requireProtectedProject(data.projectId);
-    const { accessCookieName, ACCESS_SESSION_HOURS, randomToken, sha256Hex, getAccessSession } = await import(
-      "./access.server"
-    );
+    const { ACCESS_SESSION_HOURS, randomToken, sha256Hex } = await import("./access.server");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     const grade = gradeQuiz(project.quiz, data.answers);
 
-    // Any new attempt replaces earlier access: a failed retake never keeps old access.
-    const previous = await getAccessSession(project.id);
-    if (previous) await supabaseAdmin.from("project_access_sessions").delete().eq("id", previous.id);
-    deleteCookie(accessCookieName(project.id), { path: "/" });
+    // Any new attempt replaces this user's earlier access: a failed retake never keeps old access.
+    await supabaseAdmin
+      .from("project_access_sessions")
+      .delete()
+      .eq("user_id", context.userId)
+      .eq("project_id", project.id);
 
     if (!grade.passed) return grade;
 
@@ -62,27 +63,32 @@ export const submitQuiz = createServerFn({ method: "POST" })
     const expiresAt = new Date(Date.now() + ACCESS_SESSION_HOURS * 3600_000);
     const { error } = await supabaseAdmin.from("project_access_sessions").insert({
       token_hash: await sha256Hex(token),
+      user_id: context.userId,
       project_id: project.id,
       quiz_score: grade.score,
       quiz_total: grade.total,
       expires_at: expiresAt.toISOString(),
     });
     if (error) throw new Error("Your quiz result couldn't be saved. Please try again.");
-    setCookie(accessCookieName(project.id), token, {
-      httpOnly: true,
-      secure: true,
-      sameSite: "lax",
-      path: "/",
-      // No maxAge: a browser-session cookie, so access ends when the browser session ends.
-    });
-    return grade;
+    // The browser keeps this token for the current browser session only (sessionStorage).
+    return { ...grade, accessToken: token };
+  });
+
+/** Ends every project access session of the signed-in user (used on log out). */
+export const endAllAccess = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    await supabaseAdmin.from("project_access_sessions").delete().eq("user_id", context.userId);
+    return { ok: true };
   });
 
 export const getAccessStatus = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ projectId: projectIdSchema }).parse(d))
-  .handler(async ({ data }): Promise<AccessStatus> => {
+  .handler(async ({ data, context }): Promise<AccessStatus> => {
     const { getAccessSession } = await import("./access.server");
-    const s = await getAccessSession(data.projectId);
+    const s = await getAccessSession(data.projectId, context.userId);
     const now = new Date();
     const sentAt = s?.otp_sent_at ? new Date(s.otp_sent_at) : null;
     return {
@@ -104,12 +110,13 @@ const emailSchema = z.string().trim().toLowerCase().max(254).email("Enter a vali
 
 /** Generates a 6-digit code on the server, stores only its keyed hash and emails it via Gmail. */
 export const requestOtp = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ projectId: projectIdSchema, email: z.string().max(320) }).parse(d))
-  .handler(async ({ data }): Promise<ActionResult<{ maskedEmail: string }>> => {
+  .handler(async ({ data, context }): Promise<ActionResult<{ maskedEmail: string }>> => {
     const { getAccessSession, generateOtpCode, otpHash } = await import("./access.server");
     const { sendOtpEmail } = await import("./otp-email.server");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const s = await getAccessSession(data.projectId);
+    const s = await getAccessSession(data.projectId, context.userId);
     if (!s) return { ok: false, error: "Pass the onboarding quiz before requesting a code." };
     if (s.email_verified_at) return { ok: false, error: "Your email is already verified." };
 
@@ -155,14 +162,15 @@ export const requestOtp = createServerFn({ method: "POST" })
 
 /** Verifies the code on the server; success unlocks the project's files for this access session. */
 export const verifyOtp = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ projectId: projectIdSchema, code: z.string().max(12) }).parse(d))
-  .handler(async ({ data }): Promise<ActionResult> => {
+  .handler(async ({ data, context }): Promise<ActionResult> => {
     const code = data.code.trim();
     if (!/^\d{6}$/.test(code)) return { ok: false, error: "Enter the 6-digit code from the email." };
 
     const { getAccessSession, otpHash, safeEqual } = await import("./access.server");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const s = await getAccessSession(data.projectId);
+    const s = await getAccessSession(data.projectId, context.userId);
     if (!s) return { ok: false, error: "Pass the onboarding quiz before verifying your email." };
     if (s.email_verified_at) return { ok: true };
     if (!s.email || !s.otp_sent_at || !s.otp_hash) return { ok: false, error: "Request a code first." };

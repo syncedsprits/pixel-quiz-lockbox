@@ -1,11 +1,11 @@
-import { getCookie } from "@tanstack/react-start/server";
+import { getRequestHeader } from "@tanstack/react-start/server";
 
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { ACCESS_HEADER, parseAccessTokens } from "./access-token";
 import { codeFromRandom } from "./otp-rules";
 import { QUIZ_PASS_MIN_CORRECT } from "./quiz-grading";
 
-export const accessCookieName = (projectId: string) => `hp_access_${projectId.replace(/[^a-z0-9-]/gi, "")}`;
-/** Upper bound on the server; the cookie itself is a browser-session cookie. */
+/** Upper bound on the server; the browser drops its token when the browser session ends. */
 export const ACCESS_SESSION_HOURS = 12;
 
 export async function sha256Hex(value: string): Promise<string> {
@@ -21,6 +21,7 @@ export function randomToken(): string {
 
 export type AccessSession = {
   id: string;
+  user_id: string;
   project_id: string;
   quiz_score: number;
   quiz_total: number;
@@ -34,21 +35,34 @@ export type AccessSession = {
   expires_at: string;
 };
 
-/** Looks up the caller's access session for a project from its HTTP-only cookie. */
-export async function getAccessSession(projectId: string): Promise<AccessSession | null> {
-  const token = getCookie(accessCookieName(projectId));
-  if (!token || !/^[a-f0-9]{64}$/.test(token)) return null;
-  return getAccessSessionByToken(projectId, token);
+/** Reads this request's token for a project from the access header. */
+export function accessTokenFrom(headerValue: string | null | undefined, projectId: string): string | null {
+  return parseAccessTokens(headerValue)[projectId] ?? null;
 }
 
-export async function getAccessSessionByToken(projectId: string, token: string): Promise<AccessSession | null> {
+/**
+ * Looks up the signed-in caller's access session for a project. The session must have been
+ * created by this same user AND the request must carry this browser session's token.
+ */
+export async function getAccessSession(projectId: string, userId: string): Promise<AccessSession | null> {
+  const token = accessTokenFrom(getRequestHeader(ACCESS_HEADER), projectId);
+  if (!token) return null;
+  return getAccessSessionByToken(projectId, userId, token);
+}
+
+export async function getAccessSessionByToken(
+  projectId: string,
+  userId: string,
+  token: string,
+): Promise<AccessSession | null> {
   const { data, error } = await supabaseAdmin
     .from("project_access_sessions")
     .select(
-      "id, project_id, quiz_score, quiz_total, email, otp_sent_at, otp_send_count, otp_window_started_at, otp_attempts, otp_hash, email_verified_at, expires_at",
+      "id, user_id, project_id, quiz_score, quiz_total, email, otp_sent_at, otp_send_count, otp_window_started_at, otp_attempts, otp_hash, email_verified_at, expires_at",
     )
     .eq("token_hash", await sha256Hex(token))
     .eq("project_id", projectId)
+    .eq("user_id", userId)
     .maybeSingle();
   if (error) throw new Error("Access check failed.");
   if (!data || new Date(data.expires_at).getTime() <= Date.now()) return null;
@@ -85,4 +99,14 @@ export function safeEqual(a: string, b: string): boolean {
   let diff = 0;
   for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
   return diff === 0;
+}
+
+/** Verifies a bearer access token from a raw request and returns the signed-in user's id. */
+export async function userIdFromRequest(request: Request): Promise<string | null> {
+  const auth = request.headers.get("authorization");
+  const token = auth?.startsWith("Bearer ") ? auth.slice(7) : null;
+  if (!token || token.split(".").length !== 3) return null;
+  const { data, error } = await supabaseAdmin.auth.getUser(token);
+  if (error || !data.user) return null;
+  return data.user.id;
 }
