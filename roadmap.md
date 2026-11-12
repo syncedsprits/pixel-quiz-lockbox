@@ -6,4 +6,4 @@
 - [x] Files and AI Assistant locked until quiz + email code verified (server-enforced)
 - [x] Gmail connection for sending codes (tested with a real inbox)
 - [ ] Upload the seven Trans-Shield documents to secure storage (blocked: user must attach them)
-- [ ] Create the user accounts that may sign in (blocked: user decision)
+- [x] Public "Create account" on the login card with email confirmation
