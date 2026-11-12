@@ -15,6 +15,7 @@ import {
   isOtpExpired,
 } from "./otp-rules";
 import { gradeQuiz, maskEmail, type QuizGrade } from "./quiz-grading";
+import { normalizeRole, ROLE_MAX_LENGTH } from "@/lib/roles/role-order";
 
 const projectIdSchema = z.string().min(1).max(64);
 
@@ -29,6 +30,8 @@ export interface AccessStatus {
   /** ISO time Resend OTP becomes available. */
   resendAvailableAt: string | null;
   serverNow: string;
+  /** Role picked before the quiz (document ordering only). */
+  role: string | null;
 }
 
 type ActionResult<T = object> = ({ ok: true } & T) | { ok: false; error: string };
@@ -42,7 +45,20 @@ function requireProtectedProject(projectId: string) {
 /** Grades the quiz on the server. Only a pass (2+ correct) creates an access session. */
 export const submitQuiz = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => z.object({ projectId: projectIdSchema, answers: z.array(z.number().int()).max(50) }).parse(d))
+  .inputValidator((d) =>
+    z
+      .object({
+        projectId: projectIdSchema,
+        answers: z.array(z.number().int()).max(50),
+        // The role question comes before the quiz. It is saved for document ordering only.
+        role: z.string().max(ROLE_MAX_LENGTH * 2).transform((r, ctx) => {
+          const n = normalizeRole(r);
+          if (!n) ctx.addIssue({ code: "custom", message: "Choose your role before the quiz." });
+          return n ?? "";
+        }),
+      })
+      .parse(d),
+  )
   .handler(async ({ data, context }): Promise<QuizGrade & { accessToken?: string }> => {
     const project = requireProtectedProject(data.projectId);
     const { ACCESS_SESSION_HOURS, randomToken, sha256Hex } = await import("./access.server");
@@ -67,6 +83,7 @@ export const submitQuiz = createServerFn({ method: "POST" })
       project_id: project.id,
       quiz_score: grade.score,
       quiz_total: grade.total,
+      role: data.role,
       expires_at: expiresAt.toISOString(),
     });
     if (error) throw new Error("Your quiz result couldn't be saved. Please try again.");
@@ -103,6 +120,7 @@ export const getAccessStatus = createServerFn({ method: "GET" })
           : null,
       resendAvailableAt: sentAt ? new Date(sentAt.getTime() + OTP_RESEND_COOLDOWN_SECONDS * 1000).toISOString() : null,
       serverNow: now.toISOString(),
+      role: s?.role ?? null,
     };
   });
 

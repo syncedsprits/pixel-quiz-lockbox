@@ -1,14 +1,24 @@
+import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { ArrowRight, CalendarClock, FolderOpen } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { UserAvatar } from "@/components/common/UserAvatar";
 import type { Project } from "@/data/types";
+import { accessStatusQuery } from "@/lib/access/access-queries";
 import { formatDate } from "@/lib/format";
 import { ProgressBar } from "./ProgressBar";
 import { StatusBadge } from "./StatusBadge";
 
 export function ProjectCard({ project, index = 0 }: { project: Project; index?: number }) {
+  // A quiz-protected project opens with the role question and quiz, unless this session already has access.
+  const isProtected = project.quiz.length > 0;
+  const access = useQuery({ ...accessStatusQuery(project.id), enabled: isProtected });
+  const target = !isProtected || access.data?.emailVerified
+    ? "/projects/$projectId"
+    : access.data?.quizPassed
+      ? "/projects/$projectId/verify"
+      : "/projects/$projectId/quiz";
   return (
     <article
       className="surface-card interactive-lift group flex animate-fade-up flex-col p-5"
@@ -50,7 +60,7 @@ export function ProjectCard({ project, index = 0 }: { project: Project; index?: 
               : "Last update not provided"}
         </span>
         <Button asChild size="sm" variant="soft">
-          <Link to="/projects/$projectId" params={{ projectId: project.id }}>
+          <Link to={target} params={{ projectId: project.id }}>
             Open Project
             <ArrowRight className="transition-transform group-hover:translate-x-0.5" />
           </Link>

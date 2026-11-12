@@ -1,15 +1,19 @@
 import { Link, createFileRoute, notFound, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, ArrowRight, CheckCircle2, Loader2, RotateCcw, Trophy, XCircle } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { getProject } from "@/data/projects";
 import { accessStatusQuery } from "@/lib/access/access-queries";
 import { clearAccessToken, storeAccessToken } from "@/lib/access/access-token";
 import { submitQuiz } from "@/lib/access/access.functions";
 import { QUIZ_PASS_MIN_CORRECT, type QuizGrade } from "@/lib/access/quiz-grading";
 import { saveQuizResult } from "@/lib/onboarding";
+import { normalizeRole, OTHER_ROLE, ROLE_MAX_LENGTH, ROLE_OPTIONS } from "@/lib/roles/role-order";
+import { readProjectRole, saveProjectRole } from "@/lib/roles/role-storage";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/projects/$projectId/quiz")({
@@ -44,6 +48,14 @@ function QuizPage() {
   const [result, setResult] = useState<QuizGrade | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  // The role question is asked once per browser session, before the quiz starts.
+  const [role, setRole] = useState<string | null>(null);
+  const [roleChecked, setRoleChecked] = useState(false);
+
+  useEffect(() => {
+    setRole(readProjectRole(project.id));
+    setRoleChecked(true);
+  }, [project.id]);
 
   const q = questions[index];
   if (!q) {
@@ -59,6 +71,18 @@ function QuizPage() {
           </Link>
         </Button>
       </div>
+    );
+  }
+  if (!roleChecked) return null;
+  if (!role) {
+    return (
+      <RoleStep
+        project={project}
+        onSubmit={(r) => {
+          saveProjectRole(project.id, r);
+          setRole(r);
+        }}
+      />
     );
   }
   const answered = selected !== null;
@@ -81,7 +105,7 @@ function QuizPage() {
       setSubmitting(true);
       setSubmitError(null);
       try {
-        const { accessToken, ...grade } = await submitQuiz({ data: { projectId: project.id, answers } });
+        const { accessToken, ...grade } = await submitQuiz({ data: { projectId: project.id, answers, role } });
         // The server replaced any earlier access for this project, so drop the old token too.
         clearAccessToken(project.id);
         queryClient.removeQueries({ queryKey: accessStatusQuery(project.id).queryKey });
@@ -223,6 +247,92 @@ function QuizPage() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function RoleStep({ project, onSubmit }: { project: { id: string; shortName: string }; onSubmit: (role: string) => void }) {
+  const [choice, setChoice] = useState<string | null>(null);
+  const [custom, setCustom] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const isOther = choice === OTHER_ROLE;
+
+  function submit(e: FormEvent) {
+    e.preventDefault();
+    if (!choice) return setError("Choose your role to continue.");
+    const r = normalizeRole(isOther ? custom : choice);
+    if (!r) return setError("Enter your role to continue.");
+    onSubmit(r);
+  }
+
+  return (
+    <div className="mx-auto max-w-2xl space-y-6">
+      <Link
+        to="/projects/$projectId"
+        params={{ projectId: project.id }}
+        className="inline-flex items-center gap-1.5 text-sm font-semibold text-muted-foreground hover:text-foreground"
+      >
+        <ArrowLeft className="size-4" /> {project.shortName}
+      </Link>
+
+      <form onSubmit={submit} className="surface-card animate-fade-up p-6 sm:p-8">
+        <div className="flex items-center justify-between text-xs font-bold text-muted-foreground">
+          <span>Before the quiz</span>
+          <span>Onboarding quiz</span>
+        </div>
+
+        <h1 className="mt-6 text-xl font-extrabold text-foreground sm:text-2xl">What is your role in this project?</h1>
+
+        <div className="mt-6 space-y-2.5" role="radiogroup" aria-label="Your role">
+          {ROLE_OPTIONS.map((opt) => {
+            const isChosen = opt === choice;
+            return (
+              <button
+                key={opt}
+                type="button"
+                role="radio"
+                aria-checked={isChosen}
+                onClick={() => {
+                  setChoice(opt);
+                  setError(null);
+                }}
+                className={cn(
+                  "flex w-full items-center justify-between gap-3 rounded-xl border-2 bg-background px-4 py-3.5 text-left text-sm font-semibold transition-all",
+                  isChosen ? "border-primary bg-primary-soft text-secondary-foreground" : "hover:border-primary/40 hover:bg-card",
+                )}
+              >
+                {opt}
+                {isChosen && <CheckCircle2 className="size-5 shrink-0 text-primary" />}
+              </button>
+            );
+          })}
+        </div>
+
+        {isOther && (
+          <div className="mt-5 space-y-1.5 animate-fade-in">
+            <Label htmlFor="custom-role">Your role</Label>
+            <Input
+              id="custom-role"
+              value={custom}
+              maxLength={ROLE_MAX_LENGTH}
+              autoFocus
+              placeholder="e.g. AI Engineer, IoT Developer, Product Manager"
+              onChange={(e) => {
+                setCustom(e.target.value);
+                setError(null);
+              }}
+            />
+          </div>
+        )}
+
+        {error && <p className="mt-5 rounded-xl bg-destructive-soft px-3 py-2 text-sm font-medium text-destructive">{error}</p>}
+
+        <div className="mt-6 flex justify-end">
+          <Button type="submit" variant="hero" disabled={!choice || (isOther && !normalizeRole(custom))}>
+            Submit <ArrowRight />
+          </Button>
+        </div>
+      </form>
     </div>
   );
 }

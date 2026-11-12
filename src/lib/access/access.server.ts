@@ -33,6 +33,8 @@ export type AccessSession = {
   otp_hash: string | null;
   email_verified_at: string | null;
   expires_at: string;
+  /** Role picked before the quiz; only orders documents, never decides access. */
+  role: string | null;
 };
 
 /** Reads this request's token for a project from the access header. */
@@ -58,7 +60,7 @@ export async function getAccessSessionByToken(
   const { data, error } = await supabaseAdmin
     .from("project_access_sessions")
     .select(
-      "id, user_id, project_id, quiz_score, quiz_total, email, otp_sent_at, otp_send_count, otp_window_started_at, otp_attempts, otp_hash, email_verified_at, expires_at",
+      "id, user_id, project_id, quiz_score, quiz_total, email, otp_sent_at, otp_send_count, otp_window_started_at, otp_attempts, otp_hash, email_verified_at, expires_at, role",
     )
     .eq("token_hash", await sha256Hex(token))
     .eq("project_id", projectId)
