@@ -1,0 +1,75 @@
+import { checkSignature, getFormat, validateFile } from "./formats";
+import { extractContent, ExtractionError } from "./extract";
+import { newFileId, saveFile, StorageUnavailableError, type StoredFile } from "./store";
+
+export type UploadStage = "reading" | "checking" | "extracting" | "saving";
+
+export interface UploadProgress {
+  stage: UploadStage;
+  percent: number;
+}
+
+export class UploadError extends Error {}
+
+function readWithProgress(file: File, onProgress: (fraction: number) => void): Promise<ArrayBuffer> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onprogress = (e) => {
+      if (e.lengthComputable) onProgress(e.loaded / e.total);
+    };
+    reader.onload = () => resolve(reader.result as ArrayBuffer);
+    reader.onerror = () => reject(new UploadError("The file couldn't be read from your device."));
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+/** Validates, reads, extracts and saves one file into a project. Resolves only after the save is confirmed. */
+export async function processUpload(
+  file: File,
+  projectId: string,
+  onProgress: (p: UploadProgress) => void,
+): Promise<StoredFile> {
+  const valid = validateFile(file);
+  if (!valid.ok) throw new UploadError(valid.error);
+  const format = getFormat(file.name)!;
+
+  onProgress({ stage: "reading", percent: 0 });
+  const buffer = await readWithProgress(file, (f) => onProgress({ stage: "reading", percent: Math.round(f * 40) }));
+
+  onProgress({ stage: "checking", percent: 45 });
+  const sigError = checkSignature(valid.ext, new Uint8Array(buffer.slice(0, 16)));
+  if (sigError) throw new UploadError(sigError);
+
+  onProgress({ stage: "extracting", percent: 55 });
+  let extracted;
+  try {
+    extracted = await extractContent(valid.ext, buffer, file.type);
+  } catch (e) {
+    throw new UploadError(e instanceof ExtractionError ? e.message : "This file couldn't be processed — it may be corrupted or unreadable.");
+  }
+
+  onProgress({ stage: "saving", percent: 85 });
+  const record: StoredFile = {
+    id: newFileId(),
+    projectId,
+    name: file.name,
+    extension: valid.ext,
+    mimeType: file.type || "application/octet-stream",
+    size: file.size,
+    category: format.category,
+    uploadedAt: new Date().toISOString(),
+    processing: extracted.kind === "none" || extracted.kind === "image" ? "stored" : "processed",
+    extracted,
+    storage: "browser-indexeddb",
+    blob: new Blob([buffer], { type: file.type || "application/octet-stream" }),
+  };
+  try {
+    await saveFile(record);
+  } catch (e) {
+    throw new UploadError(
+      e instanceof StorageUnavailableError ? e.message : "Saving to browser storage failed — the browser may be out of space.",
+    );
+  }
+  onProgress({ stage: "saving", percent: 100 });
+  return record;
+}
