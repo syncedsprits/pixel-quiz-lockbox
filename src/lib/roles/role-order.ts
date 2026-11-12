@@ -3,8 +3,6 @@
  * project's reference documents. The role never grants or removes access: it only reorders
  * documents the user is already allowed to open. Nothing here hides, renames or adds documents.
  */
-import type { Project } from "@/data/types";
-
 export const OTHER_ROLE = "Other";
 
 export const PRESET_ROLES = [
@@ -110,5 +108,3 @@ export function orderDocumentsForRole<T extends { id: string }>(documents: T[], 
   documents.forEach(take);
   return out;
 }
-
-export type ReferenceDocuments = Project["documents"];

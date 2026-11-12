@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { clearAllAccessTokens } from "@/lib/access/access-token";
+import { clearAllProjectRoles } from "@/lib/roles/role-storage";
 import { authAdapter } from "./index";
 import type { AuthAdapter, AuthSession, SignInInput, SignInResult } from "./types";
 
@@ -43,6 +44,7 @@ export function AuthProvider({
     const { data } = supabase.auth.onAuthStateChange((event) => {
       if (event === "SIGNED_OUT") {
         clearAllAccessTokens();
+        clearAllProjectRoles();
         setSession(null);
         setStatus("unauthenticated");
       } else if (event === "SIGNED_IN" || event === "USER_UPDATED") {

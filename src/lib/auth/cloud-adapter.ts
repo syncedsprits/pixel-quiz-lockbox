@@ -2,6 +2,7 @@ import type { User } from "@supabase/supabase-js";
 
 import { supabase } from "@/integrations/supabase/client";
 import { clearAllAccessTokens } from "@/lib/access/access-token";
+import { clearAllProjectRoles } from "@/lib/roles/role-storage";
 import type { AuthAdapter, AuthSession } from "./types";
 import { emailSchema, entrySchema, nameFromEmail, signInSchema } from "./validation";
 
@@ -76,6 +77,7 @@ export const cloudAdapter: AuthAdapter = {
       /* the session may already be gone; local cleanup below still runs */
     }
     clearAllAccessTokens();
+    clearAllProjectRoles();
     await supabase.auth.signOut();
   },
 
