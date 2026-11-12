@@ -44,6 +44,24 @@ export const cloudAdapter: AuthAdapter = {
     return { ok: true, session: toSession(data.user) };
   },
 
+  async signUp(input) {
+    const parsed = signInSchema.safeParse(input);
+    if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid details" };
+    const { error } = await supabase.auth.signUp({
+      email: parsed.data.email.trim().toLowerCase(),
+      password: parsed.data.password,
+      options: { emailRedirectTo: window.location.origin },
+    });
+    if (error) {
+      const m = error.message.toLowerCase();
+      if (m.includes("already registered")) return { ok: false, error: "An account with this email already exists. Sign in instead." };
+      if (m.includes("password")) return { ok: false, error: "Choose a stronger password." };
+      return { ok: false, error: "Your account couldn't be created. Please try again." };
+    }
+    // Email confirmation is required: the account can sign in only after the link in the email is opened.
+    return { ok: true, message: "Check your inbox and open the confirmation link, then sign in." };
+  },
+
   async signOut() {
     try {
       // End project file access on the server before the sign-in session goes away.

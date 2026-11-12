@@ -14,6 +14,7 @@ interface AuthContextValue {
   mode: AuthAdapter["mode"];
   signIn(input: SignInInput): Promise<SignInResult>;
   signOut(): Promise<void>;
+  signUp: AuthAdapter["signUp"];
   requestPasswordReset: AuthAdapter["requestPasswordReset"];
 }
 
@@ -79,6 +80,7 @@ export function AuthProvider({
       mode: adapter.mode,
       signIn,
       signOut,
+      signUp: adapter.signUp,
       requestPasswordReset: adapter.requestPasswordReset,
     }),
     [status, session, adapter, signIn, signOut],
