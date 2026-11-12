@@ -1,17 +1,25 @@
-import { Outlet, createFileRoute, useNavigate } from "@tanstack/react-router";
+import { Outlet, createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { Loader2 } from "lucide-react";
 import { useEffect } from "react";
 
 import { AppSidebar } from "@/components/layout/AppSidebar";
 import { TopBar } from "@/components/layout/TopBar";
 import { SidebarProvider } from "@/components/ui/sidebar";
+import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth/auth-context";
 
 /**
- * Signed-in shell. The guard runs client-side because the demo session lives in the
- * browser; a production adapter should also enforce access on the server.
+ * Signed-in shell. Every page below requires a valid account session: the route guard checks it
+ * with the auth server before anything renders, and every protected server function and file
+ * request re-checks the signed-in user on the server.
  */
 export const Route = createFileRoute("/_authenticated")({
+  // The session lives in the browser, so the check runs client-side (no server render of private pages).
+  ssr: false,
+  beforeLoad: async () => {
+    const { data, error } = await supabase.auth.getUser();
+    if (error || !data.user) throw redirect({ to: "/", replace: true });
+  },
   component: AuthenticatedLayout,
 });
 

@@ -168,7 +168,7 @@ function LoginPage() {
 
           <p className="mt-6 flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
             <ShieldCheck className="size-3.5" />
-            Passwords are never stored in Demo Mode.
+            Sign-in is verified securely by the server.
           </p>
         </div>
       </main>
