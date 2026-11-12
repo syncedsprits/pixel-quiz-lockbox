@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/lib/auth/auth-context";
-import { MIN_PASSWORD_LENGTH, signInSchema } from "@/lib/auth/validation";
+import { MIN_PASSWORD_LENGTH, entrySchema } from "@/lib/auth/validation";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -29,9 +29,7 @@ export const Route = createFileRoute("/")({
 type FieldErrors = Partial<Record<"email" | "password" | "form", string>>;
 
 function LoginPage() {
-  const { signIn, signUp, status, mode } = useAuth();
-  const [view, setView] = useState<"signin" | "signup">("signin");
-  const [notice, setNotice] = useState<string | null>(null);
+  const { signIn, status, mode } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -45,7 +43,7 @@ function LoginPage() {
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
-    const parsed = signInSchema.safeParse({ email, password });
+    const parsed = entrySchema.safeParse({ email, password });
     if (!parsed.success) {
       const next: FieldErrors = {};
       for (const issue of parsed.error.issues) {
@@ -56,17 +54,7 @@ function LoginPage() {
       return;
     }
     setErrors({});
-    setNotice(null);
     setSubmitting(true);
-    if (view === "signup") {
-      const created = await signUp(parsed.data);
-      setSubmitting(false);
-      if (!created.ok) return setErrors({ form: created.error });
-      setPassword("");
-      setView("signin");
-      setNotice(created.message);
-      return;
-    }
     const result = await signIn(parsed.data);
     setSubmitting(false);
     if (!result.ok) setErrors({ form: result.error });
@@ -101,19 +89,10 @@ function LoginPage() {
 
           <div className="surface-card p-7 sm:p-9">
             <div className="flex items-center justify-between gap-3">
-              <h1 className="text-2xl font-extrabold text-foreground">
-                {view === "signup" ? "Create your account" : "Welcome back"}
-              </h1>
+              <h1 className="text-2xl font-extrabold text-foreground">Welcome back</h1>
               {mode === "demo" && <DemoBadge />}
             </div>
-            <p className="mt-1.5 text-sm text-muted-foreground">
-              {view === "signup"
-                ? `Use your email and a password of at least ${MIN_PASSWORD_LENGTH} characters.`
-                : "Sign in to continue to your workspace."}
-            </p>
-            {notice && (
-              <p className="mt-5 rounded-xl bg-success-soft px-3 py-2 text-sm font-medium text-success">{notice}</p>
-            )}
+            <p className="mt-1.5 text-sm text-muted-foreground">Sign in to continue to your workspace.</p>
 
             {mode === "demo" && (
               <div className="mt-5 rounded-xl border border-lavender/25 bg-lavender-soft p-3.5 text-xs leading-relaxed text-accent-foreground">
@@ -154,7 +133,7 @@ function LoginPage() {
                   <Input
                     id="password"
                     type={showPassword ? "text" : "password"}
-                    autoComplete={view === "signup" ? "new-password" : "current-password"}
+                    autoComplete="current-password"
                     placeholder="••••••••"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
@@ -182,29 +161,15 @@ function LoginPage() {
 
               <Button type="submit" variant="hero" size="lg" className="w-full" disabled={submitting}>
                 {submitting && <Loader2 className="animate-spin" />}
-                {view === "signup" ? "Create account" : "Sign In"}
+                Sign In
               </Button>
             </form>
 
-            <p className="mt-5 text-center text-sm text-muted-foreground">
-              {view === "signup" ? "Already have an account?" : "New to HandoverPulse?"}{" "}
-              <button
-                type="button"
-                onClick={() => {
-                  setView(view === "signup" ? "signin" : "signup");
-                  setErrors({});
-                  setNotice(null);
-                }}
-                className="font-semibold text-primary hover:underline"
-              >
-                {view === "signup" ? "Sign in" : "Create account"}
-              </button>
-            </p>
           </div>
 
           <p className="mt-6 flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
             <ShieldCheck className="size-3.5" />
-            Sign-in is verified securely by the server.
+            Project files stay protected by quiz and email verification.
           </p>
         </div>
       </main>
