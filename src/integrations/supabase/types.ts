@@ -14,13 +14,119 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      project_access_sessions: {
+        Row: {
+          created_at: string
+          email: string | null
+          email_verified_at: string | null
+          expires_at: string
+          id: string
+          otp_attempts: number
+          otp_hash: string | null
+          otp_send_count: number
+          otp_sent_at: string | null
+          otp_window_started_at: string | null
+          project_id: string
+          quiz_passed_at: string
+          quiz_score: number
+          quiz_total: number
+          token_hash: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          email_verified_at?: string | null
+          expires_at?: string
+          id?: string
+          otp_attempts?: number
+          otp_hash?: string | null
+          otp_send_count?: number
+          otp_sent_at?: string | null
+          otp_window_started_at?: string | null
+          project_id: string
+          quiz_passed_at?: string
+          quiz_score: number
+          quiz_total: number
+          token_hash: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          email_verified_at?: string | null
+          expires_at?: string
+          id?: string
+          otp_attempts?: number
+          otp_hash?: string | null
+          otp_send_count?: number
+          otp_sent_at?: string | null
+          otp_window_started_at?: string | null
+          project_id?: string
+          quiz_passed_at?: string
+          quiz_score?: number
+          quiz_total?: number
+          token_hash?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      project_knowledge_chunks: {
+        Row: {
+          chunk_index: number
+          content: string
+          created_at: string
+          doc_id: string
+          doc_name: string
+          embedding: string
+          id: string
+          project_id: string
+          source_version: string
+        }
+        Insert: {
+          chunk_index: number
+          content: string
+          created_at?: string
+          doc_id: string
+          doc_name: string
+          embedding: string
+          id?: string
+          project_id: string
+          source_version: string
+        }
+        Update: {
+          chunk_index?: number
+          content?: string
+          created_at?: string
+          doc_id?: string
+          doc_name?: string
+          embedding?: string
+          id?: string
+          project_id?: string
+          source_version?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      match_project_chunks: {
+        Args: {
+          _count: number
+          _doc_ids: string[]
+          _project_id: string
+          _query: string
+        }
+        Returns: {
+          chunk_index: number
+          content: string
+          doc_id: string
+          doc_name: string
+          similarity: number
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
