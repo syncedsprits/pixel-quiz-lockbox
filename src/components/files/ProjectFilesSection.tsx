@@ -26,6 +26,7 @@ import { useProjectFiles, useUploadQueue } from "@/lib/files/hooks";
 import { forgetRecentFile } from "@/lib/files/recent";
 import { deleteFile, type StoredFile } from "@/lib/files/store";
 import { formatDate, formatDateTime } from "@/lib/format";
+import { orderDocumentsForRole } from "@/lib/roles/role-order";
 import { FileDropzone } from "./FileDropzone";
 import { downloadTarget, FilePreviewDialog, type FileTarget } from "./FilePreviewDialog";
 import { LocalStorageNotice } from "./LocalStorageNotice";
@@ -145,10 +146,12 @@ export function ProjectFilesSection({ project }: { project: Project }) {
     );
   }
 
-  return <UnlockedFilesSection project={project} />;
+  return <UnlockedFilesSection project={project} role={access.data?.role ?? null} />;
 }
 
-function UnlockedFilesSection({ project }: { project: Project }) {
+function UnlockedFilesSection({ project, role }: { project: Project; role: string | null }) {
+  // Same documents, shown in the order that suits the role picked before the quiz (Project Overview first).
+  const documents = orderDocumentsForRole(project.documents, role);
   const { files, loading, error } = useProjectFiles(project.id);
   const queue = useUploadQueue();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -195,8 +198,9 @@ function UnlockedFilesSection({ project }: { project: Project }) {
             <h3 className="text-sm font-bold text-foreground">Reference documents ({project.documents.length})</h3>
             <SourceTag type="verified" source="supplied by the project team" />
           </div>
+          {role && <p className="mb-2 text-xs text-muted-foreground">Ordered for your role: {role}</p>}
           <ul className="space-y-2">
-            {project.documents.map((d) => {
+            {documents.map((d) => {
               const target: FileTarget = { source: "reference", projectId: project.id, doc: d };
               return (
                 <FileRow
