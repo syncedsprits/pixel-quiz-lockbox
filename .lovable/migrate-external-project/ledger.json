@@ -1,7 +1,7 @@
 [
   {"capability":"code","source":"screenshot-to-spark zip","outcome":"migrate","status":"done","next_action":"none"},
   {"capability":"schema","source":"previous Cloud project","outcome":"recreated (access sessions bound to user, knowledge index)","status":"done","next_action":"none"},
-  {"capability":"auth","source":"demo sign-in","outcome":"replaced with real Cloud email/password accounts","status":"partial","next_action":"user decides who gets accounts"},
+  {"capability":"auth","source":"demo sign-in","outcome":"replaced with real Cloud accounts; public sign-up with email confirmation","status":"verified","next_action":"none"},
   {"capability":"trans-shield 7 documents","source":"old project's private storage (not in zip)","outcome":"private bucket project-documents created","status":"pending","next_action":"user attaches the seven files"},
   {"capability":"email OTP delivery","source":"Gmail connector","outcome":"connected and tested with a real inbox","status":"verified","next_action":"none"},
   {"capability":"verification","source":"-","outcome":"login, quiz 0-4, OTP send/expiry/resend/wrong/correct, file lock, logout tested","status":"partial","next_action":"test file preview and AI Assistant once documents are uploaded"}

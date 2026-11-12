@@ -23,12 +23,15 @@ export interface SignInInput {
 
 export type SignInResult = { ok: true; session: AuthSession } | { ok: false; error: string };
 
+export type SignUpResult = { ok: true; message: string } | { ok: false; error: string };
+
 export type PasswordResetResult = { ok: true; message: string } | { ok: false; error: string };
 
 export interface AuthAdapter {
   mode: AuthMode;
   getSession(): Promise<AuthSession | null>;
   signIn(input: SignInInput): Promise<SignInResult>;
+  signUp(input: SignInInput): Promise<SignUpResult>;
   signOut(): Promise<void>;
   requestPasswordReset(email: string): Promise<PasswordResetResult>;
 }
