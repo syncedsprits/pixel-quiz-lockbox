@@ -30,6 +30,7 @@ export type Database = {
           quiz_passed_at: string
           quiz_score: number
           quiz_total: number
+          role: string | null
           token_hash: string
           user_id: string
         }
@@ -48,6 +49,7 @@ export type Database = {
           quiz_passed_at?: string
           quiz_score: number
           quiz_total: number
+          role?: string | null
           token_hash: string
           user_id: string
         }
@@ -66,6 +68,7 @@ export type Database = {
           quiz_passed_at?: string
           quiz_score?: number
           quiz_total?: number
+          role?: string | null
           token_hash?: string
           user_id?: string
         }

@@ -8,6 +8,13 @@
       "when": 1794507793404,
       "tag": "0000_project_access_and_knowledge",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1794514457193,
+      "tag": "0001_access_session_role",
+      "breakpoints": true
     }
   ]
 }
