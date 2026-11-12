@@ -10,33 +10,173 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
+import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
+import { Route as AuthenticatedAssistantRouteImport } from './routes/_authenticated.assistant'
+import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated.dashboard'
+import { Route as AuthenticatedExportImportRouteImport } from './routes/_authenticated.export-import'
+import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated.settings'
+import { Route as AuthenticatedProjectsIndexRouteImport } from './routes/_authenticated.projects.index'
+import { Route as AuthenticatedProjectsProjectIdIndexRouteImport } from './routes/_authenticated.projects.$projectId.index'
+import { Route as AuthenticatedProjectsProjectIdQuizRouteImport } from './routes/_authenticated.projects.$projectId.quiz'
+import { Route as AuthenticatedProjectsProjectIdVerifyRouteImport } from './routes/_authenticated.projects.$projectId.verify'
+import { Route as ApiProjectFilesProjectIdDocIdRouteImport } from './routes/api/project-files.$projectId.$docId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedRoute = AuthenticatedRouteImport.update({
+  id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
+  id: '/forgot-password',
+  path: '/forgot-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedAssistantRoute = AuthenticatedAssistantRouteImport.update({
+  id: '/assistant',
+  path: '/assistant',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedExportImportRoute =
+  AuthenticatedExportImportRouteImport.update({
+    id: '/export-import',
+    path: '/export-import',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedProjectsIndexRoute =
+  AuthenticatedProjectsIndexRouteImport.update({
+    id: '/projects/',
+    path: '/projects/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedProjectsProjectIdIndexRoute =
+  AuthenticatedProjectsProjectIdIndexRouteImport.update({
+    id: '/projects/$projectId/',
+    path: '/projects/$projectId/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedProjectsProjectIdQuizRoute =
+  AuthenticatedProjectsProjectIdQuizRouteImport.update({
+    id: '/projects/$projectId/quiz',
+    path: '/projects/$projectId/quiz',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedProjectsProjectIdVerifyRoute =
+  AuthenticatedProjectsProjectIdVerifyRouteImport.update({
+    id: '/projects/$projectId/verify',
+    path: '/projects/$projectId/verify',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const ApiProjectFilesProjectIdDocIdRoute =
+  ApiProjectFilesProjectIdDocIdRouteImport.update({
+    id: '/api/project-files/$projectId/$docId',
+    path: '/api/project-files/$projectId/$docId',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/forgot-password': typeof ForgotPasswordRoute
+  '/assistant': typeof AuthenticatedAssistantRoute
+  '/dashboard': typeof AuthenticatedDashboardRoute
+  '/export-import': typeof AuthenticatedExportImportRoute
+  '/settings': typeof AuthenticatedSettingsRoute
+  '/projects/': typeof AuthenticatedProjectsIndexRoute
+  '/projects/$projectId/quiz': typeof AuthenticatedProjectsProjectIdQuizRoute
+  '/projects/$projectId/verify': typeof AuthenticatedProjectsProjectIdVerifyRoute
+  '/api/project-files/$projectId/$docId': typeof ApiProjectFilesProjectIdDocIdRoute
+  '/projects/$projectId/': typeof AuthenticatedProjectsProjectIdIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/forgot-password': typeof ForgotPasswordRoute
+  '/assistant': typeof AuthenticatedAssistantRoute
+  '/dashboard': typeof AuthenticatedDashboardRoute
+  '/export-import': typeof AuthenticatedExportImportRoute
+  '/settings': typeof AuthenticatedSettingsRoute
+  '/projects': typeof AuthenticatedProjectsIndexRoute
+  '/projects/$projectId/quiz': typeof AuthenticatedProjectsProjectIdQuizRoute
+  '/projects/$projectId/verify': typeof AuthenticatedProjectsProjectIdVerifyRoute
+  '/api/project-files/$projectId/$docId': typeof ApiProjectFilesProjectIdDocIdRoute
+  '/projects/$projectId': typeof AuthenticatedProjectsProjectIdIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_authenticated': typeof AuthenticatedRouteWithChildren
+  '/forgot-password': typeof ForgotPasswordRoute
+  '/_authenticated/assistant': typeof AuthenticatedAssistantRoute
+  '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/export-import': typeof AuthenticatedExportImportRoute
+  '/_authenticated/settings': typeof AuthenticatedSettingsRoute
+  '/_authenticated/projects/': typeof AuthenticatedProjectsIndexRoute
+  '/_authenticated/projects/$projectId/quiz': typeof AuthenticatedProjectsProjectIdQuizRoute
+  '/_authenticated/projects/$projectId/verify': typeof AuthenticatedProjectsProjectIdVerifyRoute
+  '/api/project-files/$projectId/$docId': typeof ApiProjectFilesProjectIdDocIdRoute
+  '/_authenticated/projects/$projectId/': typeof AuthenticatedProjectsProjectIdIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/forgot-password'
+    | '/assistant'
+    | '/dashboard'
+    | '/export-import'
+    | '/settings'
+    | '/projects/'
+    | '/projects/$projectId/quiz'
+    | '/projects/$projectId/verify'
+    | '/api/project-files/$projectId/$docId'
+    | '/projects/$projectId/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/forgot-password'
+    | '/assistant'
+    | '/dashboard'
+    | '/export-import'
+    | '/settings'
+    | '/projects'
+    | '/projects/$projectId/quiz'
+    | '/projects/$projectId/verify'
+    | '/api/project-files/$projectId/$docId'
+    | '/projects/$projectId'
+  id:
+    | '__root__'
+    | '/'
+    | '/_authenticated'
+    | '/forgot-password'
+    | '/_authenticated/assistant'
+    | '/_authenticated/dashboard'
+    | '/_authenticated/export-import'
+    | '/_authenticated/settings'
+    | '/_authenticated/projects/'
+    | '/_authenticated/projects/$projectId/quiz'
+    | '/_authenticated/projects/$projectId/verify'
+    | '/api/project-files/$projectId/$docId'
+    | '/_authenticated/projects/$projectId/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
+  ForgotPasswordRoute: typeof ForgotPasswordRoute
+  ApiProjectFilesProjectIdDocIdRoute: typeof ApiProjectFilesProjectIdDocIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +188,120 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/forgot-password': {
+      id: '/forgot-password'
+      path: '/forgot-password'
+      fullPath: '/forgot-password'
+      preLoaderRoute: typeof ForgotPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/assistant': {
+      id: '/_authenticated/assistant'
+      path: '/assistant'
+      fullPath: '/assistant'
+      preLoaderRoute: typeof AuthenticatedAssistantRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/dashboard': {
+      id: '/_authenticated/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof AuthenticatedDashboardRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/export-import': {
+      id: '/_authenticated/export-import'
+      path: '/export-import'
+      fullPath: '/export-import'
+      preLoaderRoute: typeof AuthenticatedExportImportRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/settings': {
+      id: '/_authenticated/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AuthenticatedSettingsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/projects/': {
+      id: '/_authenticated/projects/'
+      path: '/projects'
+      fullPath: '/projects/'
+      preLoaderRoute: typeof AuthenticatedProjectsIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/projects/$projectId/': {
+      id: '/_authenticated/projects/$projectId/'
+      path: '/projects/$projectId'
+      fullPath: '/projects/$projectId/'
+      preLoaderRoute: typeof AuthenticatedProjectsProjectIdIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/projects/$projectId/quiz': {
+      id: '/_authenticated/projects/$projectId/quiz'
+      path: '/projects/$projectId/quiz'
+      fullPath: '/projects/$projectId/quiz'
+      preLoaderRoute: typeof AuthenticatedProjectsProjectIdQuizRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/projects/$projectId/verify': {
+      id: '/_authenticated/projects/$projectId/verify'
+      path: '/projects/$projectId/verify'
+      fullPath: '/projects/$projectId/verify'
+      preLoaderRoute: typeof AuthenticatedProjectsProjectIdVerifyRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/api/project-files/$projectId/$docId': {
+      id: '/api/project-files/$projectId/$docId'
+      path: '/api/project-files/$projectId/$docId'
+      fullPath: '/api/project-files/$projectId/$docId'
+      preLoaderRoute: typeof ApiProjectFilesProjectIdDocIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
+interface AuthenticatedRouteChildren {
+  AuthenticatedAssistantRoute: typeof AuthenticatedAssistantRoute
+  AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedExportImportRoute: typeof AuthenticatedExportImportRoute
+  AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
+  AuthenticatedProjectsIndexRoute: typeof AuthenticatedProjectsIndexRoute
+  AuthenticatedProjectsProjectIdQuizRoute: typeof AuthenticatedProjectsProjectIdQuizRoute
+  AuthenticatedProjectsProjectIdVerifyRoute: typeof AuthenticatedProjectsProjectIdVerifyRoute
+  AuthenticatedProjectsProjectIdIndexRoute: typeof AuthenticatedProjectsProjectIdIndexRoute
+}
+
+const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
+  AuthenticatedAssistantRoute: AuthenticatedAssistantRoute,
+  AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedExportImportRoute: AuthenticatedExportImportRoute,
+  AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
+  AuthenticatedProjectsIndexRoute: AuthenticatedProjectsIndexRoute,
+  AuthenticatedProjectsProjectIdQuizRoute:
+    AuthenticatedProjectsProjectIdQuizRoute,
+  AuthenticatedProjectsProjectIdVerifyRoute:
+    AuthenticatedProjectsProjectIdVerifyRoute,
+  AuthenticatedProjectsProjectIdIndexRoute:
+    AuthenticatedProjectsProjectIdIndexRoute,
+}
+
+const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
+  AuthenticatedRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthenticatedRoute: AuthenticatedRouteWithChildren,
+  ForgotPasswordRoute: ForgotPasswordRoute,
+  ApiProjectFilesProjectIdDocIdRoute: ApiProjectFilesProjectIdDocIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

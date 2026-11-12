@@ -28,3 +28,15 @@ use the editor.
   own key and store it in Secrets.
 - **Secrets.** Lovable manages them. Do not put secret values in the repo.
 <!-- LOVABLE:END -->
+
+
+## Project rules
+
+- Project data lives in `src/data/projects.ts`; only facts found in a supplied project document go there, and unknown fields stay empty so the UI shows "Not provided yet". Why: the user forbids invented project details, history or status.
+- Supplied reference documents live in the private Cloud storage bucket `project-documents` under `<projectId>/<file name>`, are listed in exactly one project's `documents`, and are served only by `/api/project-files/$projectId/$docId`. Why: files must never mix between projects and must stay locked until access is granted.
+- Access to a quiz-protected project's files requires a server-graded quiz pass plus a verified email code, tracked in `project_access_sessions` behind an HTTP-only cookie and checked on every file request (`src/lib/access/`). Why: file protection must be enforced on the server, never by hiding UI.
+- Email codes are generated on the server (`src/lib/access/`), stored only as an HMAC (`OTP_HASH_SECRET`) bound to the access session and email, and sent from the owner's connected Gmail through the connector gateway (`otp-email.server.ts`); expiry, cooldown and attempt limits come from server timestamps. The access cookie is a browser-session cookie. Why: no sender domain exists, and codes must never reach browser code or count as sent unless Gmail accepted them.
+- User uploads are stored in browser IndexedDB (`src/lib/files/store.ts`), keyed and filtered by projectId on every read and delete, and labelled "Local mode" in the UI. Why: no storage backend or real auth is configured; never show a saved state unless the write is confirmed.
+- File parsing (`src/lib/files/extract.ts`) runs in the browser with dynamically imported parsers (pdfjs-dist, mammoth, xlsx, jszip) and throws `ExtractionError` instead of reporting partial success. Why: keeps heavy parsers out of SSR and avoids fake success states.
+- Converted document HTML is rendered only after `sanitizeHtml`. Why: uploaded documents are untrusted.
+- The AI Assistant (`src/lib/assistant/`) answers per selected project from `projectDetailsText` plus retrieval over that project's documents only (`project_knowledge_chunks`, pgvector, re-indexed automatically when a storage object changes). Locked documents are used only when the caller has file access for that project. Why: answers must stay grounded, never mix projects, and never leak locked files.

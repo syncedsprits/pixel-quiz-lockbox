@@ -1,0 +1,9 @@
+[
+  {"capability":"code","source":"pixel-perfect-replay zip","outcome":"migrate","status":"done","next_action":"none"},
+  {"capability":"schema/records","source":"none (browser-only demo data)","outcome":"none needed","status":"done","next_action":"none"},
+  {"capability":"auth","source":"demo sign-in in browser","outcome":"kept unchanged by request","status":"done","next_action":"none"},
+  {"capability":"trans-shield original 5 reference files","source":"assets of the original project","outcome":"migrate to private storage","status":"pending","next_action":"user re-attaches the five original files"},
+  {"capability":"two new trans-shield files","source":"user upload","outcome":"private storage","status":"done","next_action":"none"},
+  {"capability":"email OTP delivery","source":"Lovable Cloud email sign-in","outcome":"built, sending switched off","status":"blocked","next_action":"user sets up a sender email domain; then customise sign-in emails to include the code and turn sending on"},
+  {"capability":"verification","source":"-","outcome":"quiz, lock, denial, invalid email, wrong code, countdown, resend lock tested","status":"partial","next_action":"test correct code once code emails work"}
+]
