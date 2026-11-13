@@ -116,6 +116,7 @@ export type Database = {
           created_at: string
           extension: string
           extracted: Json | null
+          has_text: boolean
           id: string
           mime_type: string
           name: string
@@ -123,6 +124,7 @@ export type Database = {
           project_id: string
           size_bytes: number
           storage_path: string
+          summary: string
           uploaded_by: string
           uploader_email: string | null
         }
@@ -131,6 +133,7 @@ export type Database = {
           created_at?: string
           extension: string
           extracted?: Json | null
+          has_text?: boolean
           id?: string
           mime_type?: string
           name: string
@@ -138,6 +141,7 @@ export type Database = {
           project_id: string
           size_bytes: number
           storage_path: string
+          summary?: string
           uploaded_by: string
           uploader_email?: string | null
         }
@@ -146,6 +150,7 @@ export type Database = {
           created_at?: string
           extension?: string
           extracted?: Json | null
+          has_text?: boolean
           id?: string
           mime_type?: string
           name?: string
@@ -153,6 +158,7 @@ export type Database = {
           project_id?: string
           size_bytes?: number
           storage_path?: string
+          summary?: string
           uploaded_by?: string
           uploader_email?: string | null
         }
