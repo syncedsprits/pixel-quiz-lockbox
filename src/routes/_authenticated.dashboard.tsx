@@ -105,7 +105,7 @@ function Dashboard() {
           index={3}
           label="Project files"
           value={referenceCount + uploaded.length}
-          hint={`${referenceCount} reference · ${uploaded.length} uploaded here`}
+          hint={`${referenceCount} reference · ${uploaded.length} uploaded`}
           icon={FileStack}
           tone="success"
         />

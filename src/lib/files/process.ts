@@ -32,7 +32,6 @@ export async function processUpload(
 ): Promise<StoredFile> {
   const valid = validateFile(file);
   if (!valid.ok) throw new UploadError(valid.error);
-  const format = getFormat(file.name)!;
 
   onProgress({ stage: "reading", percent: 0 });
   const buffer = await readWithProgress(file, (f) => onProgress({ stage: "reading", percent: Math.round(f * 40) }));

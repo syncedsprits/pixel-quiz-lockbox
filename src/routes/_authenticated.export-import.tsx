@@ -45,7 +45,7 @@ function ExportImportPage() {
     () =>
       [...queue.items]
         .reverse()
-        .find((i) => i.status === "done" && i.result?.extracted.kind === "package" && i.key !== dismissedPackage),
+        .find((i) => i.status === "done" && i.result?.extracted?.kind === "package" && i.key !== dismissedPackage),
     [queue.items, dismissedPackage],
   );
 
@@ -67,7 +67,7 @@ function ExportImportPage() {
     setUploading(true);
     const { ok, failed } = await queue.uploadAll(destinationProject.id);
     setUploading(false);
-    if (ok) toast.success(`${ok} file${ok === 1 ? "" : "s"} saved in this browser`, { description: `Added to ${destinationProject.shortName}` });
+    if (ok) toast.success(`${ok} file${ok === 1 ? "" : "s"} shared with the project`, { description: `Added to ${destinationProject.shortName}` });
     if (failed) toast.error(`${failed} file${failed === 1 ? "" : "s"} couldn't be uploaded`, { description: "See the list for details." });
   }
 
