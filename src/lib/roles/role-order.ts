@@ -44,8 +44,6 @@ export const DOCUMENT_CATEGORIES: Record<string, DocCategory[]> = {
   "ts-frontend-scada": ["frontend"],
   "ts-backend-rag": ["backend"],
   "ts-architecture-security": ["architecture"],
-  // Executive summary, team ownership matrix, decision log, database schema and hardware pinout.
-  "ts-complete-reference": ["idea", "planning", "data"],
   // Lifecycle status, sensor configuration, PostgreSQL schema and RAG rules.
   "ts-markdown": ["product", "data"],
   // Failed approaches, lessons learned and approaches to avoid.
