@@ -7,3 +7,4 @@
 - [x] Gmail connection for sending codes (tested with a real inbox)
 - [ ] Upload the seven Trans-Shield documents to secure storage (blocked: user must attach them)
 - [x] Public "Create account" on the login card with email confirmation
+- [x] Vercel copy of the site uses the Lovable-hosted server for quiz, email codes, files and assistant (needs Lovable publish + one Vercel setting)
