@@ -7,6 +7,8 @@ import {
   verifyOtpSchema,
 } from "@/lib/access/access-schemas";
 import { assistantInputSchema } from "@/lib/assistant/assistant.functions";
+import { deleteUploadSchema, listUploadsSchema } from "@/lib/files/uploads-schemas";
+import { updateProfileSchema } from "@/lib/profile/profile-schemas";
 import type { RemoteOp } from "./remote-backend";
 
 /** Input that failed validation; its message is safe to show. */
@@ -30,6 +32,13 @@ const OPS: Record<RemoteOp, (input: unknown, userId: string) => Promise<unknown>
     (await import("@/lib/access/access-ops.server")).runVerifyOtp(parse(verifyOtpSchema, input), userId),
   "ask-assistant": async (input, userId) =>
     (await import("@/lib/assistant/assistant-ops.server")).runAskAssistant(parse(assistantInputSchema, input), userId),
+  "list-uploads": async (input, userId) =>
+    (await import("@/lib/files/uploads-ops.server")).runListUploads(parse(listUploadsSchema, input), userId),
+  "delete-upload": async (input, userId) =>
+    (await import("@/lib/files/uploads-ops.server")).runDeleteUpload(parse(deleteUploadSchema, input), userId),
+  "get-profile": async (_input, userId) => (await import("@/lib/profile/profile-ops.server")).runGetProfile(userId),
+  "update-profile": async (input, userId) =>
+    (await import("@/lib/profile/profile-ops.server")).runUpdateProfile(parse(updateProfileSchema, input), userId),
 };
 
 export function isRemoteOp(op: string): op is RemoteOp {

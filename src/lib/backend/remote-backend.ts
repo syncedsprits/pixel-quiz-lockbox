@@ -37,7 +37,11 @@ export type RemoteOp =
   | "access-status"
   | "request-otp"
   | "verify-otp"
-  | "ask-assistant";
+  | "ask-assistant"
+  | "list-uploads"
+  | "delete-upload"
+  | "get-profile"
+  | "update-profile";
 
 const UNREACHABLE = "The server couldn't be reached. Please try again.";
 
