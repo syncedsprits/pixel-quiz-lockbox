@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { getProject } from "@/data/projects";
 import { accessStatusQuery } from "@/lib/access/access-queries";
 import { clearAccessToken, storeAccessToken } from "@/lib/access/access-token";
-import { submitQuiz } from "@/lib/access/access.functions";
+import { submitQuiz } from "@/lib/access/access-client";
 import { QUIZ_PASS_MIN_CORRECT, type QuizGrade } from "@/lib/access/quiz-grading";
 import { saveQuizResult } from "@/lib/onboarding";
 import { normalizeRole, OTHER_ROLE, ROLE_MAX_LENGTH, ROLE_OPTIONS } from "@/lib/roles/role-order";

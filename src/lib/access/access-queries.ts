@@ -1,6 +1,6 @@
 import { queryOptions } from "@tanstack/react-query";
 
-import { getAccessStatus } from "./access.functions";
+import { getAccessStatus } from "./access-client";
 
 export const accessStatusQuery = (projectId: string) =>
   queryOptions({

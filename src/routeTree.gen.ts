@@ -22,6 +22,8 @@ import { Route as AuthenticatedProjectsProjectIdIndexRouteImport } from './route
 import { Route as AuthenticatedProjectsProjectIdQuizRouteImport } from './routes/_authenticated.projects.$projectId.quiz'
 import { Route as AuthenticatedProjectsProjectIdVerifyRouteImport } from './routes/_authenticated.projects.$projectId.verify'
 import { Route as ApiProjectFilesProjectIdDocIdRouteImport } from './routes/api/project-files.$projectId.$docId'
+import { Route as ApiPublicHpOpRouteImport } from './routes/api/public/hp.$op'
+import { Route as ApiPublicHpFilesProjectIdDocIdRouteImport } from './routes/api/public/hp-files.$projectId.$docId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -93,6 +95,17 @@ const ApiProjectFilesProjectIdDocIdRoute =
     path: '/api/project-files/$projectId/$docId',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHpOpRoute = ApiPublicHpOpRouteImport.update({
+  id: '/api/public/hp/$op',
+  path: '/api/public/hp/$op',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicHpFilesProjectIdDocIdRoute =
+  ApiPublicHpFilesProjectIdDocIdRouteImport.update({
+    id: '/api/public/hp-files/$projectId/$docId',
+    path: '/api/public/hp-files/$projectId/$docId',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -106,7 +119,9 @@ export interface FileRoutesByFullPath {
   '/projects/$projectId/quiz': typeof AuthenticatedProjectsProjectIdQuizRoute
   '/projects/$projectId/verify': typeof AuthenticatedProjectsProjectIdVerifyRoute
   '/api/project-files/$projectId/$docId': typeof ApiProjectFilesProjectIdDocIdRoute
+  '/api/public/hp/$op': typeof ApiPublicHpOpRoute
   '/projects/$projectId/': typeof AuthenticatedProjectsProjectIdIndexRoute
+  '/api/public/hp-files/$projectId/$docId': typeof ApiPublicHpFilesProjectIdDocIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -120,7 +135,9 @@ export interface FileRoutesByTo {
   '/projects/$projectId/quiz': typeof AuthenticatedProjectsProjectIdQuizRoute
   '/projects/$projectId/verify': typeof AuthenticatedProjectsProjectIdVerifyRoute
   '/api/project-files/$projectId/$docId': typeof ApiProjectFilesProjectIdDocIdRoute
+  '/api/public/hp/$op': typeof ApiPublicHpOpRoute
   '/projects/$projectId': typeof AuthenticatedProjectsProjectIdIndexRoute
+  '/api/public/hp-files/$projectId/$docId': typeof ApiPublicHpFilesProjectIdDocIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -136,7 +153,9 @@ export interface FileRoutesById {
   '/_authenticated/projects/$projectId/quiz': typeof AuthenticatedProjectsProjectIdQuizRoute
   '/_authenticated/projects/$projectId/verify': typeof AuthenticatedProjectsProjectIdVerifyRoute
   '/api/project-files/$projectId/$docId': typeof ApiProjectFilesProjectIdDocIdRoute
+  '/api/public/hp/$op': typeof ApiPublicHpOpRoute
   '/_authenticated/projects/$projectId/': typeof AuthenticatedProjectsProjectIdIndexRoute
+  '/api/public/hp-files/$projectId/$docId': typeof ApiPublicHpFilesProjectIdDocIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -152,7 +171,9 @@ export interface FileRouteTypes {
     | '/projects/$projectId/quiz'
     | '/projects/$projectId/verify'
     | '/api/project-files/$projectId/$docId'
+    | '/api/public/hp/$op'
     | '/projects/$projectId/'
+    | '/api/public/hp-files/$projectId/$docId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -166,7 +187,9 @@ export interface FileRouteTypes {
     | '/projects/$projectId/quiz'
     | '/projects/$projectId/verify'
     | '/api/project-files/$projectId/$docId'
+    | '/api/public/hp/$op'
     | '/projects/$projectId'
+    | '/api/public/hp-files/$projectId/$docId'
   id:
     | '__root__'
     | '/'
@@ -181,7 +204,9 @@ export interface FileRouteTypes {
     | '/_authenticated/projects/$projectId/quiz'
     | '/_authenticated/projects/$projectId/verify'
     | '/api/project-files/$projectId/$docId'
+    | '/api/public/hp/$op'
     | '/_authenticated/projects/$projectId/'
+    | '/api/public/hp-files/$projectId/$docId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -190,6 +215,8 @@ export interface RootRouteChildren {
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   ApiProjectFilesProjectIdDocIdRoute: typeof ApiProjectFilesProjectIdDocIdRoute
+  ApiPublicHpOpRoute: typeof ApiPublicHpOpRoute
+  ApiPublicHpFilesProjectIdDocIdRoute: typeof ApiPublicHpFilesProjectIdDocIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -285,6 +312,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiProjectFilesProjectIdDocIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hp/$op': {
+      id: '/api/public/hp/$op'
+      path: '/api/public/hp/$op'
+      fullPath: '/api/public/hp/$op'
+      preLoaderRoute: typeof ApiPublicHpOpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hp-files/$projectId/$docId': {
+      id: '/api/public/hp-files/$projectId/$docId'
+      path: '/api/public/hp-files/$projectId/$docId'
+      fullPath: '/api/public/hp-files/$projectId/$docId'
+      preLoaderRoute: typeof ApiPublicHpFilesProjectIdDocIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -323,6 +364,8 @@ const rootRouteChildren: RootRouteChildren = {
   ForgotPasswordRoute: ForgotPasswordRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   ApiProjectFilesProjectIdDocIdRoute: ApiProjectFilesProjectIdDocIdRoute,
+  ApiPublicHpOpRoute: ApiPublicHpOpRoute,
+  ApiPublicHpFilesProjectIdDocIdRoute: ApiPublicHpFilesProjectIdDocIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

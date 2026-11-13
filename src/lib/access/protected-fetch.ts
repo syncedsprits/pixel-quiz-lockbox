@@ -1,16 +1,17 @@
-import { supabase } from "@/integrations/supabase/client";
-import { accessHeaders } from "./access-token";
+import { backendAuthHeaders, remoteBackendOrigin } from "@/lib/backend/remote-backend";
 
 /**
  * Fetches a protected project file. The server checks both the signed-in user (bearer token)
  * and this browser session's project access (quiz + verified email) before returning any bytes.
+ * On a copy of the site hosted elsewhere, the same file is fetched from the Lovable-hosted backend.
  */
 export async function fetchProtectedFile(url: string): Promise<Response> {
-  const { data } = await supabase.auth.getSession();
-  const token = data.session?.access_token;
-  return fetch(url, {
-    credentials: "same-origin",
+  const origin = remoteBackendOrigin();
+  const target = origin && url.startsWith("/api/project-files/") ? `${origin}/api/public/hp-files/${url.slice("/api/project-files/".length)}` : url;
+  return fetch(target, {
+    mode: origin ? "cors" : "same-origin",
+    credentials: origin ? "omit" : "same-origin",
     cache: "no-store",
-    headers: { ...accessHeaders(), ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+    headers: await backendAuthHeaders(),
   });
 }
