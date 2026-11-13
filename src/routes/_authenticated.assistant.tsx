@@ -1,6 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, createFileRoute } from "@tanstack/react-router";
-import { useServerFn } from "@tanstack/react-start";
 import { Bot, FileSearch, ListChecks, Loader2, Lock, MessageSquareText, RotateCcw, SendHorizontal } from "lucide-react";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import Markdown from "react-markdown";
@@ -13,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { getProject, projects } from "@/data/projects";
 import { accessStatusQuery } from "@/lib/access/access-queries";
-import { askAssistant } from "@/lib/assistant/assistant.functions";
+import { askAssistant } from "@/lib/assistant/assistant-client";
 import { MAX_HISTORY_MESSAGES, MAX_QUESTION_CHARS, type ChatTurn } from "@/lib/assistant/policy";
 import { cn } from "@/lib/utils";
 
@@ -54,7 +53,7 @@ function AssistantPage() {
   const navigate = Route.useNavigate();
   const projectId = getProject(search.project ?? "")?.id ?? projects[0]!.id;
   const project = getProject(projectId)!;
-  const ask = useServerFn(askAssistant);
+  const ask = askAssistant;
 
   const isProtected = project.quiz.length > 0 && project.documents.length > 0;
   const access = useQuery({ ...accessStatusQuery(project.id), enabled: isProtected });

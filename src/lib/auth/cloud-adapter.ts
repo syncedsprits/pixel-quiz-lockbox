@@ -71,7 +71,7 @@ export const cloudAdapter: AuthAdapter = {
   async signOut() {
     try {
       // End project file access on the server before the sign-in session goes away.
-      const { endAllAccess } = await import("@/lib/access/access.functions");
+      const { endAllAccess } = await import("@/lib/access/access-client");
       await endAllAccess();
     } catch {
       /* the session may already be gone; local cleanup below still runs */

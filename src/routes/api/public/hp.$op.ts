@@ -20,7 +20,7 @@ export const Route = createFileRoute("/api/public/hp/$op")({
         const reply = (status: number, body: unknown) =>
           withCors(request, Response.json(body, { status, headers: { "cache-control": "no-store" } }));
 
-        const { runRemoteOp, isRemoteOp } = await import("@/lib/backend/remote-ops.server");
+        const { runRemoteOp, isRemoteOp, BadInput } = await import("@/lib/backend/remote-ops.server");
         if (!isRemoteOp(params.op)) return reply(404, { error: "Unknown operation." });
 
         const { userIdFromRequest } = await import("@/lib/access/access.server");
@@ -39,5 +39,3 @@ export const Route = createFileRoute("/api/public/hp/$op")({
     },
   },
 });
-
-class BadInput extends Error {}

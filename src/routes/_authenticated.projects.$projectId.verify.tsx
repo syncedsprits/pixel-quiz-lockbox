@@ -11,7 +11,7 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp
 import { Label } from "@/components/ui/label";
 import { getProject } from "@/data/projects";
 import { accessStatusQuery } from "@/lib/access/access-queries";
-import { requestOtp, verifyOtp } from "@/lib/access/access.functions";
+import { requestOtp, verifyOtp } from "@/lib/access/access-client";
 import { OTP_EXPIRED_MESSAGE } from "@/lib/access/otp-rules";
 
 export const Route = createFileRoute("/_authenticated/projects/$projectId/verify")({
