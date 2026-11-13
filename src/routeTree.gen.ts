@@ -18,12 +18,16 @@ import { Route as AuthenticatedDashboardRouteImport } from './routes/_authentica
 import { Route as AuthenticatedExportImportRouteImport } from './routes/_authenticated.export-import'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated.settings'
 import { Route as AuthenticatedProjectsIndexRouteImport } from './routes/_authenticated.projects.index'
+import { Route as ApiProjectUploadProjectIdRouteImport } from './routes/api/project-upload.$projectId'
 import { Route as AuthenticatedProjectsProjectIdIndexRouteImport } from './routes/_authenticated.projects.$projectId.index'
 import { Route as AuthenticatedProjectsProjectIdQuizRouteImport } from './routes/_authenticated.projects.$projectId.quiz'
 import { Route as AuthenticatedProjectsProjectIdVerifyRouteImport } from './routes/_authenticated.projects.$projectId.verify'
 import { Route as ApiProjectFilesProjectIdDocIdRouteImport } from './routes/api/project-files.$projectId.$docId'
+import { Route as ApiProjectUploadsProjectIdUploadIdRouteImport } from './routes/api/project-uploads.$projectId.$uploadId'
+import { Route as ApiPublicHpUploadProjectIdRouteImport } from './routes/api/public/hp-upload.$projectId'
 import { Route as ApiPublicHpOpRouteImport } from './routes/api/public/hp.$op'
 import { Route as ApiPublicHpFilesProjectIdDocIdRouteImport } from './routes/api/public/hp-files.$projectId.$docId'
+import { Route as ApiPublicHpUploadsProjectIdUploadIdRouteImport } from './routes/api/public/hp-uploads.$projectId.$uploadId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -71,6 +75,12 @@ const AuthenticatedProjectsIndexRoute =
     path: '/projects/',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const ApiProjectUploadProjectIdRoute =
+  ApiProjectUploadProjectIdRouteImport.update({
+    id: '/api/project-upload/$projectId',
+    path: '/api/project-upload/$projectId',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AuthenticatedProjectsProjectIdIndexRoute =
   AuthenticatedProjectsProjectIdIndexRouteImport.update({
     id: '/projects/$projectId/',
@@ -95,6 +105,18 @@ const ApiProjectFilesProjectIdDocIdRoute =
     path: '/api/project-files/$projectId/$docId',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiProjectUploadsProjectIdUploadIdRoute =
+  ApiProjectUploadsProjectIdUploadIdRouteImport.update({
+    id: '/api/project-uploads/$projectId/$uploadId',
+    path: '/api/project-uploads/$projectId/$uploadId',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHpUploadProjectIdRoute =
+  ApiPublicHpUploadProjectIdRouteImport.update({
+    id: '/api/public/hp-upload/$projectId',
+    path: '/api/public/hp-upload/$projectId',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHpOpRoute = ApiPublicHpOpRouteImport.update({
   id: '/api/public/hp/$op',
   path: '/api/public/hp/$op',
@@ -106,6 +128,12 @@ const ApiPublicHpFilesProjectIdDocIdRoute =
     path: '/api/public/hp-files/$projectId/$docId',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHpUploadsProjectIdUploadIdRoute =
+  ApiPublicHpUploadsProjectIdUploadIdRouteImport.update({
+    id: '/api/public/hp-uploads/$projectId/$uploadId',
+    path: '/api/public/hp-uploads/$projectId/$uploadId',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -115,13 +143,17 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/export-import': typeof AuthenticatedExportImportRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/api/project-upload/$projectId': typeof ApiProjectUploadProjectIdRoute
   '/projects/': typeof AuthenticatedProjectsIndexRoute
   '/projects/$projectId/quiz': typeof AuthenticatedProjectsProjectIdQuizRoute
   '/projects/$projectId/verify': typeof AuthenticatedProjectsProjectIdVerifyRoute
   '/api/project-files/$projectId/$docId': typeof ApiProjectFilesProjectIdDocIdRoute
+  '/api/project-uploads/$projectId/$uploadId': typeof ApiProjectUploadsProjectIdUploadIdRoute
+  '/api/public/hp-upload/$projectId': typeof ApiPublicHpUploadProjectIdRoute
   '/api/public/hp/$op': typeof ApiPublicHpOpRoute
   '/projects/$projectId/': typeof AuthenticatedProjectsProjectIdIndexRoute
   '/api/public/hp-files/$projectId/$docId': typeof ApiPublicHpFilesProjectIdDocIdRoute
+  '/api/public/hp-uploads/$projectId/$uploadId': typeof ApiPublicHpUploadsProjectIdUploadIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -131,13 +163,17 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/export-import': typeof AuthenticatedExportImportRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/api/project-upload/$projectId': typeof ApiProjectUploadProjectIdRoute
   '/projects': typeof AuthenticatedProjectsIndexRoute
   '/projects/$projectId/quiz': typeof AuthenticatedProjectsProjectIdQuizRoute
   '/projects/$projectId/verify': typeof AuthenticatedProjectsProjectIdVerifyRoute
   '/api/project-files/$projectId/$docId': typeof ApiProjectFilesProjectIdDocIdRoute
+  '/api/project-uploads/$projectId/$uploadId': typeof ApiProjectUploadsProjectIdUploadIdRoute
+  '/api/public/hp-upload/$projectId': typeof ApiPublicHpUploadProjectIdRoute
   '/api/public/hp/$op': typeof ApiPublicHpOpRoute
   '/projects/$projectId': typeof AuthenticatedProjectsProjectIdIndexRoute
   '/api/public/hp-files/$projectId/$docId': typeof ApiPublicHpFilesProjectIdDocIdRoute
+  '/api/public/hp-uploads/$projectId/$uploadId': typeof ApiPublicHpUploadsProjectIdUploadIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -149,13 +185,17 @@ export interface FileRoutesById {
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/export-import': typeof AuthenticatedExportImportRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
+  '/api/project-upload/$projectId': typeof ApiProjectUploadProjectIdRoute
   '/_authenticated/projects/': typeof AuthenticatedProjectsIndexRoute
   '/_authenticated/projects/$projectId/quiz': typeof AuthenticatedProjectsProjectIdQuizRoute
   '/_authenticated/projects/$projectId/verify': typeof AuthenticatedProjectsProjectIdVerifyRoute
   '/api/project-files/$projectId/$docId': typeof ApiProjectFilesProjectIdDocIdRoute
+  '/api/project-uploads/$projectId/$uploadId': typeof ApiProjectUploadsProjectIdUploadIdRoute
+  '/api/public/hp-upload/$projectId': typeof ApiPublicHpUploadProjectIdRoute
   '/api/public/hp/$op': typeof ApiPublicHpOpRoute
   '/_authenticated/projects/$projectId/': typeof AuthenticatedProjectsProjectIdIndexRoute
   '/api/public/hp-files/$projectId/$docId': typeof ApiPublicHpFilesProjectIdDocIdRoute
+  '/api/public/hp-uploads/$projectId/$uploadId': typeof ApiPublicHpUploadsProjectIdUploadIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -167,13 +207,17 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/export-import'
     | '/settings'
+    | '/api/project-upload/$projectId'
     | '/projects/'
     | '/projects/$projectId/quiz'
     | '/projects/$projectId/verify'
     | '/api/project-files/$projectId/$docId'
+    | '/api/project-uploads/$projectId/$uploadId'
+    | '/api/public/hp-upload/$projectId'
     | '/api/public/hp/$op'
     | '/projects/$projectId/'
     | '/api/public/hp-files/$projectId/$docId'
+    | '/api/public/hp-uploads/$projectId/$uploadId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -183,13 +227,17 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/export-import'
     | '/settings'
+    | '/api/project-upload/$projectId'
     | '/projects'
     | '/projects/$projectId/quiz'
     | '/projects/$projectId/verify'
     | '/api/project-files/$projectId/$docId'
+    | '/api/project-uploads/$projectId/$uploadId'
+    | '/api/public/hp-upload/$projectId'
     | '/api/public/hp/$op'
     | '/projects/$projectId'
     | '/api/public/hp-files/$projectId/$docId'
+    | '/api/public/hp-uploads/$projectId/$uploadId'
   id:
     | '__root__'
     | '/'
@@ -200,13 +248,17 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard'
     | '/_authenticated/export-import'
     | '/_authenticated/settings'
+    | '/api/project-upload/$projectId'
     | '/_authenticated/projects/'
     | '/_authenticated/projects/$projectId/quiz'
     | '/_authenticated/projects/$projectId/verify'
     | '/api/project-files/$projectId/$docId'
+    | '/api/project-uploads/$projectId/$uploadId'
+    | '/api/public/hp-upload/$projectId'
     | '/api/public/hp/$op'
     | '/_authenticated/projects/$projectId/'
     | '/api/public/hp-files/$projectId/$docId'
+    | '/api/public/hp-uploads/$projectId/$uploadId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -214,9 +266,13 @@ export interface RootRouteChildren {
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  ApiProjectUploadProjectIdRoute: typeof ApiProjectUploadProjectIdRoute
   ApiProjectFilesProjectIdDocIdRoute: typeof ApiProjectFilesProjectIdDocIdRoute
+  ApiProjectUploadsProjectIdUploadIdRoute: typeof ApiProjectUploadsProjectIdUploadIdRoute
+  ApiPublicHpUploadProjectIdRoute: typeof ApiPublicHpUploadProjectIdRoute
   ApiPublicHpOpRoute: typeof ApiPublicHpOpRoute
   ApiPublicHpFilesProjectIdDocIdRoute: typeof ApiPublicHpFilesProjectIdDocIdRoute
+  ApiPublicHpUploadsProjectIdUploadIdRoute: typeof ApiPublicHpUploadsProjectIdUploadIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -284,6 +340,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProjectsIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/api/project-upload/$projectId': {
+      id: '/api/project-upload/$projectId'
+      path: '/api/project-upload/$projectId'
+      fullPath: '/api/project-upload/$projectId'
+      preLoaderRoute: typeof ApiProjectUploadProjectIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/projects/$projectId/': {
       id: '/_authenticated/projects/$projectId/'
       path: '/projects/$projectId'
@@ -312,6 +375,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiProjectFilesProjectIdDocIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/project-uploads/$projectId/$uploadId': {
+      id: '/api/project-uploads/$projectId/$uploadId'
+      path: '/api/project-uploads/$projectId/$uploadId'
+      fullPath: '/api/project-uploads/$projectId/$uploadId'
+      preLoaderRoute: typeof ApiProjectUploadsProjectIdUploadIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hp-upload/$projectId': {
+      id: '/api/public/hp-upload/$projectId'
+      path: '/api/public/hp-upload/$projectId'
+      fullPath: '/api/public/hp-upload/$projectId'
+      preLoaderRoute: typeof ApiPublicHpUploadProjectIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hp/$op': {
       id: '/api/public/hp/$op'
       path: '/api/public/hp/$op'
@@ -324,6 +401,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/hp-files/$projectId/$docId'
       fullPath: '/api/public/hp-files/$projectId/$docId'
       preLoaderRoute: typeof ApiPublicHpFilesProjectIdDocIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hp-uploads/$projectId/$uploadId': {
+      id: '/api/public/hp-uploads/$projectId/$uploadId'
+      path: '/api/public/hp-uploads/$projectId/$uploadId'
+      fullPath: '/api/public/hp-uploads/$projectId/$uploadId'
+      preLoaderRoute: typeof ApiPublicHpUploadsProjectIdUploadIdRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -363,9 +447,15 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   ForgotPasswordRoute: ForgotPasswordRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  ApiProjectUploadProjectIdRoute: ApiProjectUploadProjectIdRoute,
   ApiProjectFilesProjectIdDocIdRoute: ApiProjectFilesProjectIdDocIdRoute,
+  ApiProjectUploadsProjectIdUploadIdRoute:
+    ApiProjectUploadsProjectIdUploadIdRoute,
+  ApiPublicHpUploadProjectIdRoute: ApiPublicHpUploadProjectIdRoute,
   ApiPublicHpOpRoute: ApiPublicHpOpRoute,
   ApiPublicHpFilesProjectIdDocIdRoute: ApiPublicHpFilesProjectIdDocIdRoute,
+  ApiPublicHpUploadsProjectIdUploadIdRoute:
+    ApiPublicHpUploadsProjectIdUploadIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

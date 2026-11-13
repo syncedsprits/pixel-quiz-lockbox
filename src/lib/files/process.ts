@@ -1,6 +1,7 @@
 import { checkSignature, getFormat, validateFile } from "./formats";
 import { extractContent, ExtractionError } from "./extract";
-import { newFileId, saveFile, StorageUnavailableError, type StoredFile } from "./store";
+import { extractedText, extractionSummary } from "./extracted";
+import { saveFile, StorageUnavailableError, type StoredFile } from "./store";
 
 export type UploadStage = "reading" | "checking" | "extracting" | "saving";
 
@@ -23,7 +24,7 @@ function readWithProgress(file: File, onProgress: (fraction: number) => void): P
   });
 }
 
-/** Validates, reads, extracts and saves one file into a project. Resolves only after the save is confirmed. */
+/** Validates, reads, extracts and saves one file into a project's shared library. Resolves only after the server confirms the save. */
 export async function processUpload(
   file: File,
   projectId: string,
@@ -49,25 +50,20 @@ export async function processUpload(
   }
 
   onProgress({ stage: "saving", percent: 85 });
-  const record: StoredFile = {
-    id: newFileId(),
-    projectId,
-    name: file.name,
-    extension: valid.ext,
-    mimeType: file.type || "application/octet-stream",
-    size: file.size,
-    category: format.category,
-    uploadedAt: new Date().toISOString(),
-    processing: extracted.kind === "none" || extracted.kind === "image" ? "stored" : "processed",
-    extracted,
-    storage: "browser-indexeddb",
-    blob: new Blob([buffer], { type: file.type || "application/octet-stream" }),
-  };
+  let record: StoredFile;
   try {
-    await saveFile(record);
+    record = await saveFile({
+      projectId,
+      file,
+      buffer,
+      extracted,
+      summary: extractionSummary(extracted),
+      hasText: extractedText(extracted).trim().length > 0,
+      processing: extracted.kind === "none" || extracted.kind === "image" ? "stored" : "processed",
+    });
   } catch (e) {
     throw new UploadError(
-      e instanceof StorageUnavailableError ? e.message : "Saving to browser storage failed — the browser may be out of space.",
+      e instanceof StorageUnavailableError || e instanceof Error ? e.message : "Saving the file failed. Please try again.",
     );
   }
   onProgress({ stage: "saving", percent: 100 });
