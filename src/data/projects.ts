@@ -163,20 +163,6 @@ const transShield: Project = {
   milestones: [],
   documents: [
     {
-      id: "ts-complete-reference",
-      name: "TRANS-SHIELD AI Complete Project Reference.pdf",
-      downloadName: "TRANS-SHIELD AI Complete Project Reference.pdf",
-      kind: "pdf",
-      typeLabel: "PDF",
-      mimeType: "application/pdf",
-      sizeBytes: 158801,
-      url: fileUrl(TRANS_SHIELD_ID, "ts-complete-reference"),
-      storagePath: `${TRANS_SHIELD_ID}/TRANS-SHIELD AI Complete Project Reference.pdf`,
-      addedAt: "2026-11-11",
-      description:
-        "Two-page master handover reference: executive summary, team ownership matrix, architecture and decision log, hardware pinout, database schema and RAG engine rules.",
-    },
-    {
       id: "ts-backend-rag",
       name: "Backend and AI RAG Pipeline.docx",
       downloadName: "Backend and AI RAG Pipeline.docx",

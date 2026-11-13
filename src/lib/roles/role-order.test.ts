@@ -31,25 +31,23 @@ describe("role-based document order", () => {
   });
 
   it("Backend Developer: Backend, Architecture, then database documents, then Frontend", () => {
-    expect(order("Backend Developer").slice(1, 6)).toEqual([
+    expect(order("Backend Developer").slice(1, 5)).toEqual([
       "ts-backend-rag",
       "ts-architecture-security",
-      "ts-complete-reference",
       "ts-markdown",
       "ts-frontend-scada",
     ]);
   });
 
   it("Architecture & Management: Architecture first, then planning documents", () => {
-    expect(order("Architecture & Management").slice(1, 4)).toEqual([
+    expect(order("Architecture & Management").slice(1, 3)).toEqual([
       "ts-architecture-security",
-      "ts-complete-reference",
       "ts-dead-end-ledger",
     ]);
   });
 
   it("Idea Developer: concept and product documents before Architecture", () => {
-    expect(order("Idea Developer").slice(1, 4)).toEqual(["ts-complete-reference", "ts-markdown", "ts-architecture-security"]);
+    expect(order("Idea Developer").slice(1, 3)).toEqual(["ts-markdown", "ts-architecture-security"]);
   });
 
   it("a custom AI Engineer role puts the Backend and AI RAG document next", () => {
