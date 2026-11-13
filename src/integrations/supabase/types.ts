@@ -110,6 +110,75 @@ export type Database = {
         }
         Relationships: []
       }
+      project_uploads: {
+        Row: {
+          category: string
+          created_at: string
+          extension: string
+          extracted: Json | null
+          id: string
+          mime_type: string
+          name: string
+          processing: string
+          project_id: string
+          size_bytes: number
+          storage_path: string
+          uploaded_by: string
+          uploader_email: string | null
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          extension: string
+          extracted?: Json | null
+          id?: string
+          mime_type?: string
+          name: string
+          processing?: string
+          project_id: string
+          size_bytes: number
+          storage_path: string
+          uploaded_by: string
+          uploader_email?: string | null
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          extension?: string
+          extracted?: Json | null
+          id?: string
+          mime_type?: string
+          name?: string
+          processing?: string
+          project_id?: string
+          size_bytes?: number
+          storage_path?: string
+          uploaded_by?: string
+          uploader_email?: string | null
+        }
+        Relationships: []
+      }
+      user_profiles: {
+        Row: {
+          display_name: string
+          email: string
+          updated_at: string
+          updated_by: string
+        }
+        Insert: {
+          display_name: string
+          email: string
+          updated_at?: string
+          updated_by: string
+        }
+        Update: {
+          display_name?: string
+          email?: string
+          updated_at?: string
+          updated_by?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
