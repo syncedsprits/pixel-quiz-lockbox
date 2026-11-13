@@ -10,7 +10,7 @@ import type { QuizGrade } from "./quiz-grading";
  */
 type Input<T> = { data: T };
 
-export function submitQuiz({ data }: Input<{ projectId: string; answers: number[]; role: string }>) {
+export function submitQuiz({ data }: Input<{ projectId: string; answers: number[]; role: string | null }>) {
   const origin = remoteBackendOrigin();
   return origin
     ? callRemote<QuizGrade & { accessToken?: string }>(origin, "submit-quiz", data)

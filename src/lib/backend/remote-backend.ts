@@ -10,7 +10,7 @@ import { accessHeaders } from "@/lib/access/access-token";
  * variable is empty, or points at the current site, the normal same-site server functions
  * are used (Lovable hosting and the editor preview).
  */
-const RAW_BACKEND_URL = String(import.meta.env.VITE_HP_BACKEND_URL ?? "").trim();
+const RAW_BACKEND_URL = String(import.meta.env["VITE_HP_BACKEND_URL"] ?? "").trim();
 
 export function remoteBackendOrigin(): string | null {
   if (!RAW_BACKEND_URL || typeof window === "undefined") return null;
