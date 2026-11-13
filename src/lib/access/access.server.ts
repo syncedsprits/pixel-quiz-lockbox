@@ -103,12 +103,19 @@ export function safeEqual(a: string, b: string): boolean {
   return diff === 0;
 }
 
-/** Verifies a bearer access token from a raw request and returns the signed-in user's id. */
-export async function userIdFromRequest(request: Request): Promise<string | null> {
+/** Verifies a bearer access token from a raw request and returns the signed-in user (id + sign-in email). */
+export async function userFromRequest(request: Request): Promise<{ id: string; email: string } | null> {
   const auth = request.headers.get("authorization");
   const token = auth?.startsWith("Bearer ") ? auth.slice(7) : null;
   if (!token || token.split(".").length !== 3) return null;
   const { data, error } = await supabaseAdmin.auth.getUser(token);
   if (error || !data.user) return null;
-  return data.user.id;
+  const entered = data.user.user_metadata?.["entered_email"];
+  const email = (data.user.email || (typeof entered === "string" ? entered : "")).trim().toLowerCase();
+  return { id: data.user.id, email };
+}
+
+/** Verifies a bearer access token from a raw request and returns the signed-in user's id. */
+export async function userIdFromRequest(request: Request): Promise<string | null> {
+  return (await userFromRequest(request))?.id ?? null;
 }

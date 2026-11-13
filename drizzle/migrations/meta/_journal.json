@@ -15,6 +15,20 @@
       "when": 1794514457193,
       "tag": "0001_access_session_role",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1794593498178,
+      "tag": "0002_shared_uploads_and_profiles",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1794593575251,
+      "tag": "0003_shared_uploads_summary",
+      "breakpoints": true
     }
   ]
 }

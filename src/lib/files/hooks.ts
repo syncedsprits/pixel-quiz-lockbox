@@ -5,7 +5,7 @@ import { FILES_CHANGED_EVENT, listAllFiles, listFiles, type StoredFile } from ".
 
 type FilesState = { files: StoredFile[]; loading: boolean; error: string | null };
 
-/** Files uploaded to one project in this browser. Refreshes when any upload or delete happens. */
+/** Shared uploads of one project (or of every project the user can open). Refreshes on upload, delete, tab focus and every 30s. */
 export function useProjectFiles(projectId: string | null) {
   const [state, setState] = useState<FilesState>({ files: [], loading: true, error: null });
 
@@ -14,7 +14,7 @@ export function useProjectFiles(projectId: string | null) {
       const files = projectId ? await listFiles(projectId) : await listAllFiles();
       setState({ files, loading: false, error: null });
     } catch (e) {
-      setState({ files: [], loading: false, error: e instanceof Error ? e.message : "Couldn't read browser storage." });
+      setState((prev) => ({ files: prev.files, loading: false, error: e instanceof Error ? e.message : "Shared files couldn't be loaded." }));
     }
   }, [projectId]);
 
@@ -24,8 +24,18 @@ export function useProjectFiles(projectId: string | null) {
       const changed = (e as CustomEvent<{ projectId: string }>).detail?.projectId;
       if (!projectId || changed === projectId) void load();
     };
+    // Files shared by other people appear without a reload.
+    const onFocus = () => {
+      if (document.visibilityState === "visible") void load();
+    };
+    const timer = window.setInterval(onFocus, 30_000);
     window.addEventListener(FILES_CHANGED_EVENT, onChange);
-    return () => window.removeEventListener(FILES_CHANGED_EVENT, onChange);
+    window.addEventListener("focus", onFocus);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener(FILES_CHANGED_EVENT, onChange);
+      window.removeEventListener("focus", onFocus);
+    };
   }, [load, projectId]);
 
   return state;

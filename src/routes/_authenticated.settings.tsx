@@ -89,7 +89,7 @@ function SettingsPage() {
             </div>
             {mode === "demo" && (
               <p className="text-xs leading-relaxed text-muted-foreground">
-                Demo sessions are stored only in this browser. Uploaded project files are also kept in this browser only.
+                Demo sessions are stored only in this browser. Uploaded project files are shared with everyone who has access to the project.
               </p>
             )}
             <Button

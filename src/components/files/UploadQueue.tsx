@@ -41,7 +41,7 @@ export function UploadQueue({
                   {format?.label ?? "Unknown type"} · {formatBytes(item.file.size)}
                   {item.status === "queued" && " · Ready to upload"}
                   {item.status === "uploading" && item.stage && ` · ${stageLabel[item.stage]}…`}
-                  {item.status === "done" && item.result && ` · Saved · ${extractionSummary(item.result.extracted)}`}
+                  {item.status === "done" && item.result && ` · Saved · ${item.result.summary}`}
                 </p>
               </div>
               {item.status === "uploading" && <Loader2 className="size-4 animate-spin text-primary" aria-label="Uploading" />}

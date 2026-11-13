@@ -62,7 +62,7 @@ export function AppSidebar() {
           <div className="rounded-2xl bg-gradient-panel p-4">
             <DemoBadge />
             <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-              Demo sign-in: your session is kept in this browser only. Uploaded files also stay in this browser.
+              Demo sign-in: your session is kept in this browser only. Uploaded project files are shared with everyone who has access to the project.
             </p>
           </div>
         </SidebarFooter>

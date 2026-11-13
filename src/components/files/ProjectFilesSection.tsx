@@ -20,7 +20,6 @@ import { Button } from "@/components/ui/button";
 import type { Project } from "@/data/types";
 import { accessStatusQuery } from "@/lib/access/access-queries";
 import { QUIZ_PASS_MIN_CORRECT } from "@/lib/access/quiz-grading";
-import { extractionSummary } from "@/lib/files/extracted";
 import { formatBytes, getFormat } from "@/lib/files/formats";
 import { useProjectFiles, useUploadQueue } from "@/lib/files/hooks";
 import { forgetRecentFile } from "@/lib/files/recent";
@@ -165,7 +164,7 @@ function UnlockedFilesSection({ project, role }: { project: Project; role: strin
     setUploading(true);
     const { ok, failed } = await queue.uploadAll(project.id);
     setUploading(false);
-    if (ok) toast.success(`${ok} file${ok === 1 ? "" : "s"} saved in this browser`, { description: project.shortName });
+    if (ok) toast.success(`${ok} file${ok === 1 ? "" : "s"} shared with the project`, { description: project.shortName });
     if (failed) toast.error(`${failed} file${failed === 1 ? "" : "s"} couldn't be uploaded`, { description: "See the list for details." });
   }
 
@@ -237,17 +236,17 @@ function UnlockedFilesSection({ project, role }: { project: Project; role: strin
                 icon={<DocumentIcon kind={getFormat(f.name)?.kind ?? "doc"} />}
                 name={f.name}
                 meta={`${getFormat(f.name)?.label ?? f.extension} · ${formatBytes(f.size)} · Uploaded ${formatDateTime(f.uploadedAt)}`}
-                description={extractionSummary(f.extracted)}
+                description={f.summary}
                 onPreview={() => setPreview({ target, tab: "preview" })}
                 onDownload={() => downloadTarget(target)}
                 onDetails={() => setPreview({ target, tab: "details" })}
-                onRemove={() => setPendingDelete(f)}
+                onRemove={f.canRemove ? () => setPendingDelete(f) : undefined}
               />
             );
           })}
         </ul>
       ) : (
-        <p className="mb-4 text-sm text-muted-foreground">No files have been uploaded to this project in this browser yet.</p>
+        <p className="mb-4 text-sm text-muted-foreground">No files have been uploaded to this project yet.</p>
       )}
 
       <FileDropzone compact inputRef={inputRef} onFiles={queue.add} title={`Drop files for ${project.shortName} or click to browse`} />
@@ -279,7 +278,7 @@ function UnlockedFilesSection({ project, role }: { project: Project; role: strin
           <AlertDialogHeader>
             <AlertDialogTitle>Remove this file?</AlertDialogTitle>
             <AlertDialogDescription>
-              “{pendingDelete?.name}” will be removed from {project.shortName} in this browser. Other projects aren't affected. This can't be undone.
+              “{pendingDelete?.name}” will be removed from {project.shortName} for everyone. Other projects aren't affected. This can't be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

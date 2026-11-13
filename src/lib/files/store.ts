@@ -1,10 +1,12 @@
 /**
- * Local file storage (browser IndexedDB). No storage server is configured for this app, so uploaded
- * files are kept only in this browser on this device. Every record carries its projectId and every
- * read/delete is scoped by it so files never cross between projects.
+ * Shared project uploads (Lovable Cloud). Files are stored as shared project resources: everyone
+ * with access to a project sees and can open them. Every call is scoped by projectId and checked on
+ * the server (sign-in, plus quiz + verified email code for quiz-protected projects).
  */
-import type { FileCategory } from "./formats";
+import { backendAuthHeaders, callRemote, remoteBackendOrigin } from "@/lib/backend/remote-backend";
 import type { Extracted } from "./extracted";
+import type { FileCategory } from "./formats";
+import type { SharedUpload } from "./uploads-schemas";
 
 export interface StoredFile {
   id: string;
@@ -17,89 +19,101 @@ export interface StoredFile {
   uploadedAt: string;
   /** "processed" when readable content was extracted; "stored" when only the original was kept. */
   processing: "processed" | "stored";
-  extracted: Extracted;
-  storage: "browser-indexeddb";
-  blob: Blob;
+  /** Short description of what was read from the file. */
+  summary: string;
+  hasText: boolean;
+  /** True when the signed-in user uploaded it and may remove it. */
+  canRemove: boolean;
+  storage: "cloud";
+  /** Same-site, access-checked address of the original file. */
+  url: string;
+  /** Present only right after this browser uploaded the file. Otherwise read from `url` when previewed. */
+  extracted?: Extracted;
+  blob?: Blob;
 }
 
-const DB_NAME = "handoverpulse.files";
-const STORE = "files";
 export const FILES_CHANGED_EVENT = "handoverpulse:files-changed";
 
 export class StorageUnavailableError extends Error {
   constructor() {
-    super("This browser blocks local storage, so files can't be saved here. Try a different browser or turn off private mode.");
+    super("The shared file library couldn't be reached. Please check your connection and try again.");
   }
 }
 
-let dbPromise: Promise<IDBDatabase> | null = null;
+export const uploadUrl = (projectId: string, id: string) =>
+  `/api/project-uploads/${encodeURIComponent(projectId)}/${encodeURIComponent(id)}`;
 
-function openDb(): Promise<IDBDatabase> {
-  if (typeof indexedDB === "undefined") return Promise.reject(new StorageUnavailableError());
-  dbPromise ??= new Promise<IDBDatabase>((resolve, reject) => {
-    const req = indexedDB.open(DB_NAME, 1);
-    req.onupgradeneeded = () => {
-      const store = req.result.createObjectStore(STORE, { keyPath: "id" });
-      store.createIndex("projectId", "projectId", { unique: false });
-    };
-    req.onsuccess = () => resolve(req.result);
-    req.onerror = () => reject(new StorageUnavailableError());
-  }).catch((e) => {
-    dbPromise = null;
-    throw e;
-  });
-  return dbPromise;
-}
-
-function run<T>(mode: IDBTransactionMode, fn: (store: IDBObjectStore) => IDBRequest<T>): Promise<T> {
-  return openDb().then(
-    (db) =>
-      new Promise<T>((resolve, reject) => {
-        const tx = db.transaction(STORE, mode);
-        const req = fn(tx.objectStore(STORE));
-        tx.oncomplete = () => resolve(req.result);
-        tx.onerror = () => reject(tx.error ?? new Error("Storage operation failed"));
-        tx.onabort = () => reject(tx.error ?? new Error("Storage operation was cancelled (the browser may be out of space)"));
-      }),
-  );
+function fromShared(s: SharedUpload): StoredFile {
+  return {
+    ...s,
+    category: s.category as FileCategory,
+    storage: "cloud",
+    url: uploadUrl(s.projectId, s.id),
+  };
 }
 
 function notify(projectId: string) {
   window.dispatchEvent(new CustomEvent(FILES_CHANGED_EVENT, { detail: { projectId } }));
 }
 
-export async function saveFile(file: StoredFile): Promise<void> {
-  await run("readwrite", (s) => s.add(file));
-  // Read back to confirm the write really landed before reporting success.
-  const check = await getFile(file.projectId, file.id);
-  if (!check) throw new Error("The file couldn't be confirmed in browser storage.");
-  notify(file.projectId);
+async function list(projectId: string | null): Promise<StoredFile[]> {
+  const origin = remoteBackendOrigin();
+  const rows = origin
+    ? await callRemote<SharedUpload[]>(origin, "list-uploads", { projectId })
+    : await (await import("./uploads.functions")).listUploads({ data: { projectId } });
+  return rows.filter((r) => projectId === null || r.projectId === projectId).map(fromShared);
 }
 
-export async function listFiles(projectId: string): Promise<StoredFile[]> {
-  const all = await run<StoredFile[]>("readonly", (s) => s.index("projectId").getAll(projectId));
-  return all.filter((f) => f.projectId === projectId).sort((a, b) => b.uploadedAt.localeCompare(a.uploadedAt));
+export function listFiles(projectId: string): Promise<StoredFile[]> {
+  return list(projectId);
 }
 
-export async function listAllFiles(): Promise<StoredFile[]> {
-  return run<StoredFile[]>("readonly", (s) => s.getAll());
+/** Shared uploads of every project the signed-in user can open. */
+export function listAllFiles(): Promise<StoredFile[]> {
+  return list(null);
 }
 
-export async function getFile(projectId: string, id: string): Promise<StoredFile | null> {
-  const f = await run<StoredFile | undefined>("readonly", (s) => s.get(id));
-  return f && f.projectId === projectId ? f : null;
+/** Uploads one file to a project's shared library. Resolves only after the server confirms the save. */
+export async function saveFile(input: {
+  projectId: string;
+  file: File;
+  buffer: ArrayBuffer;
+  extracted: Extracted;
+  summary: string;
+  hasText: boolean;
+  processing: "processed" | "stored";
+}): Promise<StoredFile> {
+  const origin = remoteBackendOrigin();
+  const path = `/api/${origin ? "public/hp-upload" : "project-upload"}/${encodeURIComponent(input.projectId)}`;
+  const form = new FormData();
+  form.append("file", new File([input.buffer], input.file.name, { type: input.file.type }));
+  form.append("summary", input.summary);
+  form.append("hasText", String(input.hasText));
+  form.append("processing", input.processing);
+  let res: Response;
+  try {
+    res = await fetch(`${origin ?? ""}${path}`, {
+      method: "POST",
+      mode: origin ? "cors" : "same-origin",
+      credentials: origin ? "omit" : "same-origin",
+      cache: "no-store",
+      headers: await backendAuthHeaders(),
+      body: form,
+    });
+  } catch {
+    throw new StorageUnavailableError();
+  }
+  const body = (await res.json().catch(() => null)) as { result?: SharedUpload; error?: string } | null;
+  if (!res.ok || !body?.result) throw new Error(body?.error || "The file couldn't be saved. Please try again.");
+  const saved = fromShared(body.result);
+  notify(input.projectId);
+  return { ...saved, extracted: input.extracted, blob: new Blob([input.buffer], { type: saved.mimeType }) };
 }
 
-/** Deletes a file only if it belongs to the given project. */
+/** Removes a shared file from its project (only its uploader may do this; checked on the server). */
 export async function deleteFile(projectId: string, id: string): Promise<void> {
-  const existing = await getFile(projectId, id);
-  if (!existing) throw new Error("That file isn't in this project.");
-  await run("readwrite", (s) => s.delete(id));
+  const origin = remoteBackendOrigin();
+  if (origin) await callRemote(origin, "delete-upload", { projectId, uploadId: id });
+  else await (await import("./uploads.functions")).deleteUpload({ data: { projectId, uploadId: id } });
   notify(projectId);
-}
-
-export function newFileId(): string {
-  return typeof crypto !== "undefined" && "randomUUID" in crypto
-    ? crypto.randomUUID()
-    : `f-${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
 }

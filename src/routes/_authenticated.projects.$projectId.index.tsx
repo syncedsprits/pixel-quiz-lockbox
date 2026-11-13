@@ -250,9 +250,9 @@ function ProjectOverview() {
     setShowSpotlight(false);
   }, [project.id]);
 
-  const filesWithText = files.filter((f) => extractedText(f.extracted).trim().length > 0);
+  const filesWithText = files.filter((f) => f.hasText);
   const activity = [
-    ...files.map((f) => ({ at: f.uploadedAt, text: `File uploaded in this browser: ${f.name}` })),
+    ...files.map((f) => ({ at: f.uploadedAt, text: `File uploaded: ${f.name}` })),
     ...(result ? [{ at: result.completedAt, text: `Onboarding quiz completed · ${result.score}/${result.total} correct` }] : []),
   ].sort((a, b) => b.at.localeCompare(a.at));
 

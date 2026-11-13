@@ -7,7 +7,13 @@ import { backendAuthHeaders, remoteBackendOrigin } from "@/lib/backend/remote-ba
  */
 export async function fetchProtectedFile(url: string): Promise<Response> {
   const origin = remoteBackendOrigin();
-  const target = origin && url.startsWith("/api/project-files/") ? `${origin}/api/public/hp-files/${url.slice("/api/project-files/".length)}` : url;
+  const target = !origin
+    ? url
+    : url.startsWith("/api/project-files/")
+      ? `${origin}/api/public/hp-files/${url.slice("/api/project-files/".length)}`
+      : url.startsWith("/api/project-uploads/")
+        ? `${origin}/api/public/hp-uploads/${url.slice("/api/project-uploads/".length)}`
+        : url;
   return fetch(target, {
     mode: origin ? "cors" : "same-origin",
     credentials: origin ? "omit" : "same-origin",
