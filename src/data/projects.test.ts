@@ -24,7 +24,7 @@ describe("Projects section", () => {
     expect(sg.repository).toBe("https://github.com/syncedsprints/project-companion");
   });
 
-  it("attaches the five original plus two added Trans-Shield documents to Trans-Shield only", () => {
+  it("attaches the six supplied Trans-Shield documents to Trans-Shield only", () => {
     const ts = projects.find((p) => p.id === TRANS_SHIELD_ID)!;
     const sg = projects.find((p) => p.id === SKYGRID_ID)!;
     expect(ts.documents.map((d) => d.name).sort()).toEqual(
@@ -32,7 +32,6 @@ describe("Projects section", () => {
         "Backend and AI RAG Pipeline.docx",
         "Frontend and SCADA Interface.docx",
         "System Architecture and Security Governance.docx",
-        "TRANS-SHIELD AI Complete Project Reference.pdf",
         "TRANS-SHIELD AI Markdown Documentation",
         "TRANS-SHIELD_AI_-_Master_Project_Overview.pdf",
         "TRANS-SHIELD_AI_Dead-End_Ledger.docx",
