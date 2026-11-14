@@ -31,7 +31,7 @@ export function shouldTryNextModel(e: unknown): boolean {
 }
 
 export async function geminiGenerate(system: string, turns: GeminiTurn[]): Promise<string> {
-  const key = process.env.GEMINI_API_KEY;
+  const key = process.env["GEMINI_API_KEY"];
   if (!key) throw new GeminiError("missing_key", "GEMINI_API_KEY is not set");
   let last: unknown;
   for (const model of GEMINI_MODELS) {

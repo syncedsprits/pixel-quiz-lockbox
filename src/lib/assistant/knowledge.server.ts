@@ -86,7 +86,7 @@ async function embedBatch(key: string, texts: string[]): Promise<number[][]> {
 }
 
 export async function embed(texts: string[]): Promise<number[][]> {
-  const key = process.env.GEMINI_API_KEY;
+  const key = process.env["GEMINI_API_KEY"];
   if (!key) throw new GeminiError("missing_key", "GEMINI_API_KEY is not set");
   const out: number[][] = [];
   for (let i = 0; i < texts.length; i += 64) out.push(...(await embedBatch(key, texts.slice(i, i + 64))));
