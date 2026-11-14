@@ -47,7 +47,7 @@ export async function runAskAssistant(data: z.infer<typeof assistantInputSchema>
     const project = getProject(data.projectId);
     if (!project) return { ok: false, error: "This project doesn't exist." };
 
-    const { GatewayError, PaymentRequiredError, RateLimitError, generateResponse } = await import("@lovable.dev/ai-gateway");
+    const { GeminiError, geminiGenerate } = await import("./gemini.server");
     const { ensureProjectIndex, retrieve } = await import("./knowledge.server");
     const { getAccessSession, hasFileAccess } = await import("@/lib/access/access.server");
 
@@ -83,29 +83,26 @@ export async function runAskAssistant(data: z.infer<typeof assistantInputSchema>
         .filter(Boolean)
         .join("\n\n");
 
-      const res = await generateResponse({
-        model: "openai/gpt-6-astra",
-        instructions: instructions(project.name, documentsLocked, excerpts.length > 0),
-        input: [
-          ...data.history.map((t) => ({ role: t.role, content: t.content })),
-          { role: "user" as const, content: `${context}\n\n=== QUESTION ===\n${data.question}` },
-        ],
-      });
-
-      const answer = res.output
-        .flatMap((o) => (o.type === "message" ? o.content : []))
-        .map((c) => (c.type === "output_text" ? c.text : ""))
-        .join("")
-        .trim();
+      const answer = await geminiGenerate(instructions(project.name, documentsLocked, excerpts.length > 0), [
+        ...data.history.map((t) => ({ role: t.role, content: t.content })),
+        { role: "user" as const, content: `${context}\n\n=== QUESTION ===\n${data.question}` },
+      ]);
       if (!answer) return { ok: false, error: "The assistant returned an empty answer. Please try again." };
 
       const sources = [...new Set(excerpts.map((c) => c.docName))].filter((n) => answer.includes(n));
       return { ok: true, answer, sources, documentsLocked };
     } catch (e) {
       console.error("[assistant] failed", e);
-      if (e instanceof PaymentRequiredError) return { ok: false, error: "The AI service is out of credits. Please ask the project owner to add credits." };
-      if (e instanceof RateLimitError) return { ok: false, error: "The AI service is busy. Please wait a moment and try again." };
-      if (e instanceof GatewayError) return { ok: false, error: "The AI service couldn't answer right now. Please try again." };
+      if (e instanceof GeminiError) {
+        if (e.kind === "missing_key") return { ok: false, error: "The AI service isn't configured yet. Please ask the project owner to add the Gemini API key." };
+        if (e.kind === "rate_limit") return { ok: false, error: "The AI service has reached its usage limit for now (free-tier quota). Please wait a minute and try again." };
+        if (e.kind === "auth") return { ok: false, error: "The AI service key was rejected. Please ask the project owner to check the Gemini API key." };
+        if (e.kind === "blocked") return { ok: false, error: "The AI service declined to answer this question. Please rephrase it." };
+        return { ok: false, error: "The AI service couldn't answer right now. Please try again." };
+      }
+      if (e instanceof Error && /storage|knowledge index|Document search/.test(e.message)) {
+        return { ok: false, error: "The project's documents couldn't be searched right now. Please try again." };
+      }
       return { ok: false, error: "Something went wrong while preparing the answer. Please try again." };
     }
   }
