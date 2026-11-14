@@ -1,11 +1,11 @@
-import { generateEmbeddings } from "@lovable.dev/ai-gateway";
-
 import type { Project, ProjectDocument } from "@/data/types";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { GeminiError, geminiErrorKind } from "./gemini.server";
 import { chunkText } from "./policy";
 
 const BUCKET = "project-documents";
-const EMBED_MODEL = "google/gemini-embedding-2" as const;
+/** Google Gemini embedding model, called directly with GEMINI_API_KEY (server only). */
+const EMBED_MODEL = "gemini-embedding-2";
 const DIMENSIONS = 768;
 
 export type RetrievedChunk = { docId: string; docName: string; chunkIndex: number; content: string; similarity: number };
@@ -48,16 +48,48 @@ export async function extractDocumentText(doc: ProjectDocument, bytes: Uint8Arra
   return null;
 }
 
-export async function embed(texts: string[]): Promise<number[][]> {
-  const out: number[][] = [];
-  for (let i = 0; i < texts.length; i += 64) {
-    const res = await generateEmbeddings({ model: EMBED_MODEL, input: texts.slice(i, i + 64), dimensions: DIMENSIONS });
-    const rows = [...res.data].sort((a, b) => a.index - b.index);
-    for (const r of rows) {
-      if (!Array.isArray(r.embedding)) throw new Error("Unexpected embedding format");
-      out.push(r.embedding as number[]);
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/** One Gemini batch embedding request; retries once on a free-tier rate limit before giving up. */
+async function embedBatch(key: string, texts: string[]): Promise<number[][]> {
+  for (let attempt = 0; ; attempt++) {
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${EMBED_MODEL}:batchEmbedContents`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-goog-api-key": key },
+      body: JSON.stringify({
+        requests: texts.map((text) => ({
+          model: `models/${EMBED_MODEL}`,
+          content: { parts: [{ text }] },
+          outputDimensionality: DIMENSIONS,
+        })),
+      }),
+    });
+    if (res.ok) {
+      const json = (await res.json()) as { embeddings?: { values?: number[] }[] };
+      const rows = json.embeddings ?? [];
+      if (rows.length !== texts.length) throw new GeminiError("unavailable", "Unexpected embedding count");
+      return rows.map((r) => {
+        if (!Array.isArray(r.values) || r.values.length !== DIMENSIONS) {
+          throw new GeminiError("unavailable", "Unexpected embedding format");
+        }
+        return r.values;
+      });
     }
+    const body = await res.text().catch(() => "");
+    console.error("[gemini-embed] HTTP", res.status, body.slice(0, 500));
+    if (res.status === 429 && attempt === 0) {
+      await sleep(3000);
+      continue;
+    }
+    throw new GeminiError(geminiErrorKind(res.status), `Gemini embedding HTTP ${res.status}`);
   }
+}
+
+export async function embed(texts: string[]): Promise<number[][]> {
+  const key = process.env.GEMINI_API_KEY;
+  if (!key) throw new GeminiError("missing_key", "GEMINI_API_KEY is not set");
+  const out: number[][] = [];
+  for (let i = 0; i < texts.length; i += 64) out.push(...(await embedBatch(key, texts.slice(i, i + 64))));
   return out;
 }
 
