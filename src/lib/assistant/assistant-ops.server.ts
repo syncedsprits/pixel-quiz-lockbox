@@ -10,7 +10,12 @@ import type { AssistantReply, assistantInputSchema } from "./assistant.functions
  * and the /api/public/hp/ask-assistant route (frontend hosted elsewhere, e.g. Vercel).
  * The caller must already have verified the signed-in user.
  */
-function instructions(projectName: string, documentsLocked: boolean, hasDocuments: boolean): string {
+/** True when this server holds the privileged key needed to read access sessions and the document index. */
+export function hasDocumentBackend(): boolean {
+  return !!process.env["SUPABASE_SERVICE_ROLE_KEY"] && !!process.env["SUPABASE_URL"];
+}
+
+function instructions(projectName: string, documentsLocked: boolean, hasDocuments: boolean, documentsUnavailable = false): string {
   return `You are the Project AI Assistant for one project only: "${projectName}".
 You are a knowledgeable technical assistant for this project (hardware, sensors, microcontrollers, communication, circuit/pin connections, software, AI/ML, working principle, data flow, algorithms, specifications, testing, advantages, limitations, applications, future scope, documentation, presentation and viva preparation).
 
@@ -30,7 +35,9 @@ ${NOT_DOCUMENTED_REPLY}
 - If the question is ambiguous, ask one short clarification question instead of guessing.
 - Mention the supporting document name (and page/section when visible in the excerpt) for project facts, e.g. "(Source: <document name>)".
 ${
-  documentsLocked
+  documentsUnavailable
+    ? `- The project's uploaded documents cannot be searched from this site. You only have the public project details. Never claim to have read the documents. When a question needs document content, say the detailed documents are not searchable here, then answer only from the public details.`
+    : documentsLocked
     ? `- This visitor has NOT unlocked the project's documents (onboarding quiz + email verification). You only have the public project details. When a question needs document content, say that the detailed documents become available to the assistant after unlocking the Project Files, then answer only from the public details.`
     : hasDocuments
       ? ""
@@ -48,18 +55,24 @@ export async function runAskAssistant(data: z.infer<typeof assistantInputSchema>
     if (!project) return { ok: false, error: "This project doesn't exist." };
 
     const { GeminiError, geminiGenerate } = await import("./gemini.server");
-    const { ensureProjectIndex, retrieve } = await import("./knowledge.server");
-    const { getAccessSession, hasFileAccess } = await import("@/lib/access/access.server");
 
-    // Locked documents are used only for visitors who passed this project's quiz + email code.
+    // Hosts without the privileged backend key (e.g. Vercel) can't verify file access or search the
+    // private document index, so they answer from the public project details only and say so.
+    const canSearchDocuments = hasDocumentBackend();
     const protectedProject = project.quiz.length > 0;
-    const unlocked = !protectedProject || hasFileAccess(await getAccessSession(project.id, userId));
-    const documentsLocked = protectedProject && !unlocked && project.documents.length > 0;
+    let unlocked = !protectedProject;
+    if (canSearchDocuments && protectedProject) {
+      const { getAccessSession, hasFileAccess } = await import("@/lib/access/access.server");
+      unlocked = hasFileAccess(await getAccessSession(project.id, userId));
+    }
+    const documentsUnavailable = !canSearchDocuments && project.documents.length > 0;
+    const documentsLocked = (protectedProject && !unlocked && project.documents.length > 0) || documentsUnavailable;
 
     try {
-      let excerpts: Awaited<ReturnType<typeof retrieve>> = [];
+      let excerpts: { docName: string; chunkIndex: number; content: string }[] = [];
       let missingNames: string[] = [];
-      if (unlocked && project.documents.length > 0) {
+      if (canSearchDocuments && unlocked && project.documents.length > 0) {
+        const { ensureProjectIndex, retrieve } = await import("./knowledge.server");
         const { indexed, missing } = await ensureProjectIndex(project);
         missingNames = project.documents.filter((d) => missing.includes(d.id)).map((d) => d.name);
         const lastUser = [...data.history].reverse().find((t) => t.role === "user")?.content ?? "";
@@ -73,7 +86,9 @@ export async function runAskAssistant(data: z.infer<typeof assistantInputSchema>
           ? `DOCUMENT EXCERPTS (most relevant first):\n${excerpts
               .map((c) => `--- [${c.docName}, excerpt ${c.chunkIndex + 1}] ---\n${c.content}`)
               .join("\n\n")}`
-          : documentsLocked
+          : documentsUnavailable
+            ? "DOCUMENT EXCERPTS: none (this site cannot search the project's private documents; only the public project details are available)."
+            : documentsLocked
             ? "DOCUMENT EXCERPTS: none (documents are locked for this visitor)."
             : "DOCUMENT EXCERPTS: none found.",
         missingNames.length
@@ -83,7 +98,7 @@ export async function runAskAssistant(data: z.infer<typeof assistantInputSchema>
         .filter(Boolean)
         .join("\n\n");
 
-      const answer = await geminiGenerate(instructions(project.name, documentsLocked, excerpts.length > 0), [
+      const answer = await geminiGenerate(instructions(project.name, documentsLocked, excerpts.length > 0, documentsUnavailable), [
         ...data.history.map((t) => ({ role: t.role, content: t.content })),
         { role: "user" as const, content: `${context}\n\n=== QUESTION ===\n${data.question}` },
       ]);
