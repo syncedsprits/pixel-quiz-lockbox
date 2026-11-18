@@ -51,7 +51,7 @@ function FileRow({
   onPreview: () => void;
   onDownload: () => void;
   onDetails: () => void;
-  onRemove?: () => void;
+  onRemove?: (() => void) | undefined;
 }) {
   return (
     <li className="flex flex-col gap-3 rounded-xl border bg-background p-3 sm:flex-row sm:items-center">

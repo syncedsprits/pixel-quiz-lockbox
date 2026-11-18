@@ -173,7 +173,7 @@ function ExportImportPage() {
         </SectionCard>
       )}
 
-      {latestPackage?.result?.extracted.kind === "package" && (
+      {latestPackage?.result?.extracted?.kind === "package" && (
         <SectionCard
           title="Import preview"
           action={

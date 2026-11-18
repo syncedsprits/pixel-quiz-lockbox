@@ -54,7 +54,8 @@ export async function downloadTarget(t: FileTarget) {
   const info = targetInfo(t);
   try {
     if (t.source === "reference") await downloadUrl(t.doc.url, t.doc.downloadName, t.doc.mimeType);
-    else downloadBlob(t.file.blob, t.file.name);
+    else if (t.file.blob) downloadBlob(t.file.blob, t.file.name);
+    else await downloadUrl(t.file.url, t.file.name, t.file.mimeType);
     recordRecentFile({ projectId: info.projectId, fileId: info.id, name: info.name, kind: info.kind, source: t.source });
   } catch (e) {
     toast.error("Download failed", {
@@ -98,9 +99,15 @@ export function FilePreviewDialog({
           const buffer = await res.arrayBuffer();
           blob = new Blob([buffer], { type: target.doc.mimeType });
           extracted = await extractContent(info.ext, buffer, target.doc.mimeType);
-        } else {
+        } else if (target.file.blob && target.file.extracted) {
           blob = target.file.blob;
           extracted = target.file.extracted;
+        } else {
+          const res = await fetchProtectedFile(target.file.url);
+          if (!res.ok) throw new Error(await responseError(res, "The file couldn't be loaded"));
+          const buffer = await res.arrayBuffer();
+          blob = new Blob([buffer], { type: target.file.mimeType });
+          extracted = await extractContent(info.ext, buffer, target.file.mimeType);
         }
         url = URL.createObjectURL(blob);
         if (!cancelled) setState({ status: "ready", extracted, blobUrl: url });
@@ -208,8 +215,10 @@ export function FilePreviewDialog({
                     ],
                     [
                       "Processing",
-                      target.source === "upload"
+                      target.source === "upload" && target.file.extracted
                         ? extractionSummary(target.file.extracted)
+                        : target.source === "upload" && state.status !== "ready"
+                          ? target.file.summary
                         : state.status === "ready"
                           ? extractionSummary(state.extracted)
                           : "Read when previewed",
