@@ -41,7 +41,10 @@ export type RemoteOp =
   | "list-uploads"
   | "delete-upload"
   | "get-profile"
-  | "update-profile";
+  | "update-profile"
+  | "request-approval"
+  | "list-approval-requests"
+  | "decide-approval";
 
 const UNREACHABLE = "The server couldn't be reached. Please try again.";
 

@@ -29,6 +29,13 @@
       "when": 1794593575251,
       "tag": "0003_shared_uploads_summary",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1795063778068,
+      "tag": "0004_add_old_admin_approval",
+      "breakpoints": true
     }
   ]
 }

@@ -7,6 +7,8 @@ import {
   requestOtpSchema,
   submitQuizSchema,
   verifyOtpSchema,
+  decideApprovalSchema,
+  type ApprovalRequest,
   type AccessStatus,
   type ActionResult,
 } from "./access-schemas";
@@ -57,4 +59,29 @@ export const verifyOtp = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<ActionResult> => {
     const { runVerifyOtp } = await import("./access-ops.server");
     return runVerifyOtp(data, context.userId);
+  });
+
+/** Sends this verified request to Old Admin for a decision. */
+export const requestApproval = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => projectOnlySchema.parse(d))
+  .handler(async ({ data, context }): Promise<ActionResult> => {
+    const { runRequestApproval } = await import("./access-ops.server");
+    return runRequestApproval(data, context.userId);
+  });
+
+export const listApprovalRequests = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => projectOnlySchema.parse(d))
+  .handler(async ({ data, context }): Promise<ApprovalRequest[]> => {
+    const { runListApprovalRequests } = await import("./access-ops.server");
+    return runListApprovalRequests(data, context.userId);
+  });
+
+export const decideApproval = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => decideApprovalSchema.parse(d))
+  .handler(async ({ data, context }): Promise<ActionResult> => {
+    const { runDecideApproval } = await import("./access-ops.server");
+    return runDecideApproval(data, context.userId);
   });

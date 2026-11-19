@@ -25,6 +25,23 @@ export const requestOtpSchema = z.object({ projectId: projectIdSchema, email: z.
 
 export const verifyOtpSchema = z.object({ projectId: projectIdSchema, code: z.string().max(12) });
 
+export const decideApprovalSchema = z.object({
+  projectId: projectIdSchema,
+  requestId: z.string().uuid(),
+  decision: z.enum(["approve", "decline"]),
+});
+
+export type ApprovalStatus = "none" | "pending" | "approved" | "declined";
+
+export interface ApprovalRequest {
+  id: string;
+  maskedEmail: string | null;
+  role: string | null;
+  requestedAt: string | null;
+  /** True when the request came from the account viewing the list. */
+  fromYou: boolean;
+}
+
 export const emailSchema = z.string().trim().toLowerCase().max(254).email("Enter a valid email address.");
 
 export interface AccessStatus {
@@ -40,6 +57,8 @@ export interface AccessStatus {
   serverNow: string;
   /** Role picked before the quiz (document ordering only). */
   role: string | null;
+  /** Old Admin decision for this request; files and the assistant open only when "approved". */
+  approvalStatus: ApprovalStatus;
 }
 
 export type ActionResult<T = object> = ({ ok: true } & T) | { ok: false; error: string };

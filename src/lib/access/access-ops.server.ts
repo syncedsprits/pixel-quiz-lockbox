@@ -21,6 +21,8 @@ import {
   type requestOtpSchema,
   type submitQuizSchema,
   type verifyOtpSchema,
+  type decideApprovalSchema,
+  type ApprovalRequest,
 } from "./access-schemas";
 
 /**
@@ -97,6 +99,7 @@ export async function runGetAccessStatus(data: z.output<typeof projectOnlySchema
       resendAvailableAt: sentAt ? new Date(sentAt.getTime() + OTP_RESEND_COOLDOWN_SECONDS * 1000).toISOString() : null,
       serverNow: now.toISOString(),
       role: s?.role ?? null,
+      approvalStatus: s?.approval_status ?? "none",
     };
 }
 
@@ -188,4 +191,65 @@ export async function runVerifyOtp(data: z.output<typeof verifyOtpSchema>, userI
       .select("id");
     if (upd || !updated?.length) return { ok: false, error: "Verification couldn't be saved. Please request a new code." };
     return { ok: true };
+}
+
+/** After the email code is verified, this request waits for an Old Admin decision. */
+export async function runRequestApproval(data: z.output<typeof projectOnlySchema>, userId: string): Promise<ActionResult> {
+  const { getAccessSession } = await import("./access.server");
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const s = await getAccessSession(data.projectId, userId);
+  if (!s) return { ok: false, error: "Pass the onboarding quiz before asking for permission." };
+  if (!s.email_verified_at) return { ok: false, error: "Verify your email before asking for permission." };
+  if (s.approval_status === "approved" || s.approval_status === "pending") return { ok: true };
+  const { error } = await supabaseAdmin
+    .from("project_access_sessions")
+    .update({ approval_status: "pending", approval_requested_at: new Date().toISOString(), approval_decided_at: null })
+    .eq("id", s.id);
+  if (error) return { ok: false, error: "Your request couldn't be sent. Please try again." };
+  return { ok: true };
+}
+
+/** Pending requests for one project, each listed separately (demo Old Admin view). */
+export async function runListApprovalRequests(
+  data: z.output<typeof projectOnlySchema>,
+  userId: string,
+): Promise<ApprovalRequest[]> {
+  requireProtectedProject(data.projectId);
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data: rows, error } = await supabaseAdmin
+    .from("project_access_sessions")
+    .select("id, user_id, email, role, approval_requested_at")
+    .eq("project_id", data.projectId)
+    .eq("approval_status", "pending")
+    .not("email_verified_at", "is", null)
+    .gt("expires_at", new Date().toISOString())
+    .order("approval_requested_at", { ascending: true })
+    .limit(50);
+  if (error) throw new Error("Requests couldn't be loaded. Please try again.");
+  return (rows ?? []).map((r) => ({
+    id: r.id,
+    maskedEmail: r.email ? maskEmail(r.email) : null,
+    role: r.role,
+    requestedAt: r.approval_requested_at,
+    fromYou: r.user_id === userId,
+  }));
+}
+
+/** Approves or declines exactly one pending request. A request can be decided only once. */
+export async function runDecideApproval(data: z.output<typeof decideApprovalSchema>, _userId: string): Promise<ActionResult> {
+  requireProtectedProject(data.projectId);
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data: updated, error } = await supabaseAdmin
+    .from("project_access_sessions")
+    .update({
+      approval_status: data.decision === "approve" ? "approved" : "declined",
+      approval_decided_at: new Date().toISOString(),
+    })
+    .eq("id", data.requestId)
+    .eq("project_id", data.projectId)
+    .eq("approval_status", "pending")
+    .select("id");
+  if (error) return { ok: false, error: "The decision couldn't be saved. Please try again." };
+  if (!updated?.length) return { ok: false, error: "This request was already decided or no longer exists." };
+  return { ok: true };
 }

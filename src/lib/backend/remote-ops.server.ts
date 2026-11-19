@@ -5,6 +5,7 @@ import {
   requestOtpSchema,
   submitQuizSchema,
   verifyOtpSchema,
+  decideApprovalSchema,
 } from "@/lib/access/access-schemas";
 import { assistantInputSchema } from "@/lib/assistant/assistant.functions";
 import { deleteUploadSchema, listUploadsSchema } from "@/lib/files/uploads-schemas";
@@ -39,6 +40,12 @@ const OPS: Record<RemoteOp, (input: unknown, userId: string) => Promise<unknown>
   "get-profile": async (_input, userId) => (await import("@/lib/profile/profile-ops.server")).runGetProfile(userId),
   "update-profile": async (input, userId) =>
     (await import("@/lib/profile/profile-ops.server")).runUpdateProfile(parse(updateProfileSchema, input), userId),
+  "request-approval": async (input, userId) =>
+    (await import("@/lib/access/access-ops.server")).runRequestApproval(parse(projectOnlySchema, input), userId),
+  "list-approval-requests": async (input, userId) =>
+    (await import("@/lib/access/access-ops.server")).runListApprovalRequests(parse(projectOnlySchema, input), userId),
+  "decide-approval": async (input, userId) =>
+    (await import("@/lib/access/access-ops.server")).runDecideApproval(parse(decideApprovalSchema, input), userId),
 };
 
 export function isRemoteOp(op: string): op is RemoteOp {

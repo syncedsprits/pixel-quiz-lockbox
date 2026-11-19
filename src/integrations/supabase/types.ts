@@ -16,6 +16,9 @@ export type Database = {
     Tables: {
       project_access_sessions: {
         Row: {
+          approval_decided_at: string | null
+          approval_requested_at: string | null
+          approval_status: string
           created_at: string
           email: string | null
           email_verified_at: string | null
@@ -35,6 +38,9 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          approval_decided_at?: string | null
+          approval_requested_at?: string | null
+          approval_status?: string
           created_at?: string
           email?: string | null
           email_verified_at?: string | null
@@ -54,6 +60,9 @@ export type Database = {
           user_id: string
         }
         Update: {
+          approval_decided_at?: string | null
+          approval_requested_at?: string | null
+          approval_status?: string
           created_at?: string
           email?: string | null
           email_verified_at?: string | null

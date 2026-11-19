@@ -1,6 +1,6 @@
 import { callRemote, remoteBackendOrigin } from "@/lib/backend/remote-backend";
 import * as fns from "./access.functions";
-import type { AccessStatus, ActionResult } from "./access-schemas";
+import type { AccessStatus, ActionResult, ApprovalRequest } from "./access-schemas";
 import type { QuizGrade } from "./quiz-grading";
 
 /**
@@ -37,4 +37,21 @@ export function requestOtp({ data }: Input<{ projectId: string; email: string }>
 export function verifyOtp({ data }: Input<{ projectId: string; code: string }>) {
   const origin = remoteBackendOrigin();
   return origin ? callRemote<ActionResult>(origin, "verify-otp", data) : fns.verifyOtp({ data });
+}
+
+export function requestApproval({ data }: Input<{ projectId: string }>) {
+  const origin = remoteBackendOrigin();
+  return origin ? callRemote<ActionResult>(origin, "request-approval", data) : fns.requestApproval({ data });
+}
+
+export function listApprovalRequests({ data }: Input<{ projectId: string }>) {
+  const origin = remoteBackendOrigin();
+  return origin
+    ? callRemote<ApprovalRequest[]>(origin, "list-approval-requests", data)
+    : fns.listApprovalRequests({ data });
+}
+
+export function decideApproval({ data }: Input<{ projectId: string; requestId: string; decision: "approve" | "decline" }>) {
+  const origin = remoteBackendOrigin();
+  return origin ? callRemote<ActionResult>(origin, "decide-approval", data) : fns.decideApproval({ data });
 }

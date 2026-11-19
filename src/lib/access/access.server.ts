@@ -35,7 +35,11 @@ export type AccessSession = {
   expires_at: string;
   /** Role picked before the quiz; only orders documents, never decides access. */
   role: string | null;
+  /** Old Admin decision for this one request (this user + this project + this browser session). */
+  approval_status: ApprovalStatus;
 };
+
+export type ApprovalStatus = "none" | "pending" | "approved" | "declined";
 
 /** Reads this request's token for a project from the access header. */
 export function accessTokenFrom(headerValue: string | null | undefined, projectId: string): string | null {
@@ -60,7 +64,7 @@ export async function getAccessSessionByToken(
   const { data, error } = await supabaseAdmin
     .from("project_access_sessions")
     .select(
-      "id, user_id, project_id, quiz_score, quiz_total, email, otp_sent_at, otp_send_count, otp_window_started_at, otp_attempts, otp_hash, email_verified_at, expires_at, role",
+      "id, user_id, project_id, quiz_score, quiz_total, email, otp_sent_at, otp_send_count, otp_window_started_at, otp_attempts, otp_hash, email_verified_at, expires_at, role, approval_status",
     )
     .eq("token_hash", await sha256Hex(token))
     .eq("project_id", projectId)
@@ -71,9 +75,9 @@ export async function getAccessSessionByToken(
   return data as AccessSession;
 }
 
-/** True only when the quiz was passed AND the email OTP was verified for this project. */
-export function hasFileAccess(s: AccessSession | null): boolean {
-  return !!s && s.quiz_score >= QUIZ_PASS_MIN_CORRECT && !!s.email_verified_at;
+/** True only when the quiz was passed, the email OTP was verified AND Old Admin approved this request. */
+export function hasFileAccess(s: Pick<AccessSession, "quiz_score" | "email_verified_at" | "approval_status"> | null): boolean {
+  return !!s && s.quiz_score >= QUIZ_PASS_MIN_CORRECT && !!s.email_verified_at && s.approval_status === "approved";
 }
 
 /** Cryptographically secure, uniformly random 6-digit code. */

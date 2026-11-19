@@ -18,7 +18,7 @@ export async function serveProjectFile(request: Request, projectId: string, docI
   if (!userId) return deny(401, "Sign in to open project files.");
   const session = await getAccessSession(projectId, userId);
   if (!hasFileAccess(session)) {
-    return deny(403, "Pass the onboarding quiz and verify your email to open this file.");
+    return deny(403, "Pass the onboarding quiz, verify your email and get Old Admin approval to open this file.");
   }
 
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");

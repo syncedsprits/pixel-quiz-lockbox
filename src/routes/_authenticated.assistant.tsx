@@ -57,7 +57,7 @@ function AssistantPage() {
 
   const isProtected = project.quiz.length > 0 && project.documents.length > 0;
   const access = useQuery({ ...accessStatusQuery(project.id), enabled: isProtected });
-  const unlocked = !isProtected || !!access.data?.emailVerified;
+  const unlocked = !isProtected || (!!access.data?.emailVerified && access.data.approvalStatus === "approved");
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [draft, setDraft] = useState("");
@@ -149,9 +149,15 @@ function AssistantPage() {
           <div className="mb-4 flex flex-wrap items-center gap-2 rounded-xl bg-primary-soft px-3 py-2 text-xs font-medium text-secondary-foreground">
             <Lock className="size-3.5" />
             <span>Answers use only the public project details until you unlock this project's files.</span>
-            <Link to="/projects/$projectId/quiz" params={{ projectId }} className="font-bold text-primary hover:underline">
-              Unlock files
-            </Link>
+            {access.data?.emailVerified ? (
+              <Link to="/projects/$projectId" params={{ projectId }} hash="project-files" className="font-bold text-primary hover:underline">
+                Ask Permission to Old Admin
+              </Link>
+            ) : (
+              <Link to="/projects/$projectId/quiz" params={{ projectId }} className="font-bold text-primary hover:underline">
+                Unlock files
+              </Link>
+            )}
           </div>
         )}
 

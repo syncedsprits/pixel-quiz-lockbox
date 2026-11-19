@@ -4,6 +4,7 @@ import { Download, Eye, Info, Loader2, Lock, MailCheck, PlayCircle, Trash2, Uplo
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
+import { OldAdminApproval } from "@/components/access/OldAdminApproval";
 import { SectionCard } from "@/components/common/SectionCard";
 import { DocumentIcon } from "@/components/projects/DocumentIcon";
 import {
@@ -117,7 +118,7 @@ function LockedFiles({ project, quizPassed }: { project: Project; quizPassed: bo
 export function ProjectFilesSection({ project }: { project: Project }) {
   const isProtected = project.quiz.length > 0;
   const access = useQuery({ ...accessStatusQuery(project.id), enabled: isProtected });
-  const unlocked = !isProtected || !!access.data?.emailVerified;
+  const unlocked = !isProtected || (!!access.data?.emailVerified && access.data.approvalStatus === "approved");
 
   useEffect(() => {
     if (unlocked && isProtected && window.location.hash === "#project-files") {
@@ -137,6 +138,8 @@ export function ProjectFilesSection({ project }: { project: Project }) {
             <p className="rounded-xl bg-destructive-soft px-3 py-2 text-sm font-medium text-destructive">
               File access couldn't be checked. Please refresh the page.
             </p>
+          ) : access.data?.emailVerified ? (
+            <OldAdminApproval project={project} approvalStatus={access.data.approvalStatus} />
           ) : (
             <LockedFiles project={project} quizPassed={!!access.data?.quizPassed} />
           )}

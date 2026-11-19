@@ -131,7 +131,7 @@ function VerifyEmailPage() {
         await refresh();
         return;
       }
-      toast.success("Verification successful", { description: `Your email is verified. ${project.shortName} files are now unlocked.` });
+      toast.success("Verification successful", { description: "Next, ask Old Admin for permission to open the files." });
       await refresh();
       navigate({ to: "/projects/$projectId", params: { projectId: project.id }, hash: "project-files" });
     } catch {
