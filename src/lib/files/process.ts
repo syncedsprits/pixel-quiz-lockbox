@@ -1,6 +1,7 @@
 import { checkSignature, getFormat, validateFile } from "./formats";
 import { extractContent, ExtractionError } from "./extract";
 import { extractedText, extractionSummary } from "./extracted";
+import { maskExtracted, scanNote } from "./masking";
 import { saveFile, StorageUnavailableError, type StoredFile } from "./store";
 
 export type UploadStage = "reading" | "checking" | "extracting" | "saving";
@@ -48,6 +49,10 @@ export async function processUpload(
     throw new UploadError(e instanceof ExtractionError ? e.message : "This file couldn't be processed — it may be corrupted or unreadable.");
   }
 
+  // Mask sensitive values before anything is summarised, saved or shown.
+  const masked = maskExtracted(extracted);
+  extracted = masked.extracted;
+
   onProgress({ stage: "saving", percent: 85 });
   let record: StoredFile;
   try {
@@ -56,7 +61,7 @@ export async function processUpload(
       file,
       buffer,
       extracted,
-      summary: extractionSummary(extracted),
+      summary: `${extractionSummary(extracted)} · ${scanNote(valid.ext, masked.count)}`.slice(0, 200),
       hasText: extractedText(extracted).trim().length > 0,
       processing: extracted.kind === "none" || extracted.kind === "image" ? "stored" : "processed",
     });
@@ -66,5 +71,7 @@ export async function processUpload(
     );
   }
   onProgress({ stage: "saving", percent: 100 });
-  return record;
+  // Drop the local original so previews always load the server's redacted copy.
+  const { blob: _original, ...rest } = record;
+  return rest;
 }

@@ -19,4 +19,6 @@ export interface SharedUpload {
   summary: string;
   hasText: boolean;
   canRemove: boolean;
+  /** Who uploaded it: "you", a masked email, or "a project member". */
+  uploadedBy: string;
 }

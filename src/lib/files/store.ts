@@ -24,6 +24,8 @@ export interface StoredFile {
   hasText: boolean;
   /** True when the signed-in user uploaded it and may remove it. */
   canRemove: boolean;
+  /** Who uploaded it ("you", a masked email, or "a project member"). */
+  uploadedBy: string;
   storage: "cloud";
   /** Same-site, access-checked address of the original file. */
   url: string;

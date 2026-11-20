@@ -92,8 +92,13 @@ export function categoriesForRole(role: string | null | undefined): DocCategory[
  * categories in order, then all remaining documents in their existing order. Without a role (or
  * when a custom role matches nothing), the existing order is kept after Project Overview.
  */
-export function orderDocumentsForRole<T extends { id: string }>(documents: T[], role: string | null | undefined): T[] {
-  const cats = (id: string) => DOCUMENT_CATEGORIES[id] ?? [];
+export function orderDocumentsForRole<T extends { id: string }>(
+  documents: T[],
+  role: string | null | undefined,
+  categoriesOf: (doc: T) => DocCategory[] = (d) => DOCUMENT_CATEGORIES[d.id] ?? [],
+): T[] {
+  const byId = new Map(documents.map((d) => [d.id, d]));
+  const cats = (id: string) => categoriesOf(byId.get(id)!);
   const placed = new Set<string>();
   const out: T[] = [];
   const take = (d: T) => {
@@ -104,5 +109,30 @@ export function orderDocumentsForRole<T extends { id: string }>(documents: T[], 
   documents.filter((d) => cats(d.id).includes("overview")).forEach(take);
   for (const c of categoriesForRole(role)) documents.filter((d) => cats(d.id).includes(c)).forEach(take);
   documents.forEach(take);
+  return out;
+}
+
+/** Filename keywords that place an uploaded file in a document category. Uploads never count as Project Overview. */
+const UPLOAD_NAME_RULES: { pattern: RegExp; category: DocCategory }[] = [
+  { pattern: /(ui|ux|design|wireframe|mockup|figma|prototype|style ?guide)/, category: "uiux" },
+  { pattern: /(front ?end|scada|dashboard|interface|react|screen)/, category: "frontend" },
+  { pattern: /(back ?end|api|server|rag|pipeline|fastapi|python|ai|ml|model)/, category: "backend" },
+  { pattern: /(architecture|security|governance|system|infra|network|deploy)/, category: "architecture" },
+  { pattern: /(idea|concept|pitch|proposal|vision)/, category: "idea" },
+  { pattern: /(product|requirement|spec|feature|lifecycle|readme)/, category: "product" },
+  { pattern: /(plan|roadmap|timeline|ledger|lesson|meeting|minutes|status|report|test)/, category: "planning" },
+  { pattern: /(data|schema|database|sql|sensor|dataset)/, category: "data" },
+];
+
+/**
+ * Categories of an uploaded file, inferred from its name and format. Empty when uncertain: the file
+ * then simply follows the role-matched documents, so nothing is ever hidden.
+ */
+export function categoriesForUpload(name: string, fileCategory?: string): DocCategory[] {
+  const text = name.toLowerCase().replace(/\.[a-z0-9]+$/, "").replace(/[_\-.]+/g, " ");
+  const out: DocCategory[] = [];
+  for (const r of UPLOAD_NAME_RULES) if (r.pattern.test(text) && !out.includes(r.category)) out.push(r.category);
+  if (!out.length && fileCategory === "data") out.push("data");
+  if (!out.length && fileCategory === "presentation") out.push("planning");
   return out;
 }

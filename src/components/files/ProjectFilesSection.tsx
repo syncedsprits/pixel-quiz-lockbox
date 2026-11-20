@@ -26,7 +26,7 @@ import { useProjectFiles, useUploadQueue } from "@/lib/files/hooks";
 import { forgetRecentFile } from "@/lib/files/recent";
 import { deleteFile, type StoredFile } from "@/lib/files/store";
 import { formatDate, formatDateTime } from "@/lib/format";
-import { orderDocumentsForRole } from "@/lib/roles/role-order";
+import { categoriesForUpload, DOCUMENT_CATEGORIES, orderDocumentsForRole } from "@/lib/roles/role-order";
 import { FileDropzone } from "./FileDropzone";
 import { downloadTarget, FilePreviewDialog, type FileTarget } from "./FilePreviewDialog";
 import { LocalStorageNotice } from "./LocalStorageNotice";
@@ -152,9 +152,17 @@ export function ProjectFilesSection({ project }: { project: Project }) {
 }
 
 function UnlockedFilesSection({ project, role }: { project: Project; role: string | null }) {
-  // Same documents, shown in the order that suits the role picked before the quiz (Project Overview first).
-  const documents = orderDocumentsForRole(project.documents, role);
   const { files, loading, error } = useProjectFiles(project.id);
+  // Reference documents and shared uploads in one list, ordered for the role picked before the quiz
+  // (Project Overview first). Keyed by source + id so each file appears exactly once.
+  type Item = { id: string; ref?: Project["documents"][number]; upload?: StoredFile };
+  const items: Item[] = [
+    ...project.documents.map((d) => ({ id: `ref:${d.id}`, ref: d })),
+    ...files.map((f) => ({ id: `up:${f.id}`, upload: f })),
+  ].filter((it, i, all) => all.findIndex((o) => o.id === it.id) === i);
+  const documents = orderDocumentsForRole(items, role, (it) =>
+    it.ref ? (DOCUMENT_CATEGORIES[it.ref.id] ?? []) : categoriesForUpload(it.upload!.name, it.upload!.category),
+  );
   const queue = useUploadQueue();
   const inputRef = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<{ target: FileTarget; tab: "preview" | "details" } | null>(null);
@@ -194,26 +202,45 @@ function UnlockedFilesSection({ project, role }: { project: Project; role: strin
         </Button>
       }
     >
-      {project.documents.length > 0 && (
+      {documents.length > 0 && (
         <div className="mb-6">
           <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-            <h3 className="text-sm font-bold text-foreground">Reference documents ({project.documents.length})</h3>
+            <h3 className="text-sm font-bold text-foreground">Reference documents ({documents.length})</h3>
             <SourceTag type="verified" source="supplied by the project team" />
           </div>
           {role && <p className="mb-2 text-xs text-muted-foreground">Ordered for your role: {role}</p>}
           <ul className="space-y-2">
-            {documents.map((d) => {
-              const target: FileTarget = { source: "reference", projectId: project.id, doc: d };
+            {documents.map((it) => {
+              if (it.ref) {
+                const d = it.ref;
+                const target: FileTarget = { source: "reference", projectId: project.id, doc: d };
+                return (
+                  <FileRow
+                    key={it.id}
+                    icon={<DocumentIcon kind={d.kind} />}
+                    name={d.name}
+                    meta={`${d.typeLabel} · ${formatBytes(d.sizeBytes)} · Added ${formatDate(d.addedAt)}`}
+                    description={d.description}
+                    onPreview={() => setPreview({ target, tab: "preview" })}
+                    onDownload={() => downloadTarget(target)}
+                    onDetails={() => setPreview({ target, tab: "details" })}
+                  />
+                );
+              }
+              const f = it.upload!;
+              const target: FileTarget = { source: "upload", file: f };
               return (
                 <FileRow
-                  key={d.id}
-                  icon={<DocumentIcon kind={d.kind} />}
-                  name={d.name}
-                  meta={`${d.typeLabel} · ${formatBytes(d.sizeBytes)} · Added ${formatDate(d.addedAt)}`}
-                  description={d.description}
+                  key={it.id}
+                  icon={<DocumentIcon kind={getFormat(f.name)?.kind ?? "doc"} />}
+                  name={f.name}
+                  meta={`${getFormat(f.name)?.label ?? f.extension} · ${formatBytes(f.size)} · Uploaded ${formatDateTime(f.uploadedAt)} by ${f.uploadedBy}`}
+                  description={f.summary}
+                  tag={<SourceTag type="imported" />}
                   onPreview={() => setPreview({ target, tab: "preview" })}
                   onDownload={() => downloadTarget(target)}
                   onDetails={() => setPreview({ target, tab: "details" })}
+                  onRemove={f.canRemove ? () => setPendingDelete(f) : undefined}
                 />
               );
             })}
@@ -230,24 +257,7 @@ function UnlockedFilesSection({ project, role }: { project: Project; role: strin
       {loading ? (
         <p className="py-4 text-sm text-muted-foreground">Loading files…</p>
       ) : files.length ? (
-        <ul className="mb-4 space-y-2">
-          {files.map((f) => {
-            const target: FileTarget = { source: "upload", file: f };
-            return (
-              <FileRow
-                key={f.id}
-                icon={<DocumentIcon kind={getFormat(f.name)?.kind ?? "doc"} />}
-                name={f.name}
-                meta={`${getFormat(f.name)?.label ?? f.extension} · ${formatBytes(f.size)} · Uploaded ${formatDateTime(f.uploadedAt)}`}
-                description={f.summary}
-                onPreview={() => setPreview({ target, tab: "preview" })}
-                onDownload={() => downloadTarget(target)}
-                onDetails={() => setPreview({ target, tab: "details" })}
-                onRemove={f.canRemove ? () => setPendingDelete(f) : undefined}
-              />
-            );
-          })}
-        </ul>
+        <p className="mb-4 text-sm text-muted-foreground">Uploaded files are listed above with the project documents, in the order for your role.</p>
       ) : (
         <p className="mb-4 text-sm text-muted-foreground">No files have been uploaded to this project yet.</p>
       )}

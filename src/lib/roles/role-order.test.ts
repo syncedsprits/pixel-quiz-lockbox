@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { getProject, TRANS_SHIELD_ID } from "@/data/projects";
-import { normalizeRole, orderDocumentsForRole } from "./role-order";
+import { categoriesForUpload, DOCUMENT_CATEGORIES, normalizeRole, orderDocumentsForRole } from "./role-order";
 
 const docs = getProject(TRANS_SHIELD_ID)!.documents;
 const order = (role: string | null) => orderDocumentsForRole(docs, role).map((d) => d.id);
@@ -61,5 +61,22 @@ describe("role-based document order", () => {
 
   it("rejects an empty custom role", () => {
     expect(normalizeRole("   ")).toBeNull();
+  });
+});
+
+describe("uploaded files in the role-based order", () => {
+  type Item = { id: string; name?: string };
+  const items: Item[] = [...docs.map((d) => ({ id: d.id })), { id: "up:1", name: "Login wireframe.pdf" }, { id: "up:2", name: "notes.txt" }];
+  const cats = (it: Item) => (it.name ? categoriesForUpload(it.name) : (DOCUMENT_CATEGORIES[it.id] ?? []));
+  it("UI/UX Developer sees a UI/UX upload right after Project Overview", () => {
+    const ids = orderDocumentsForRole(items, "UI/UX Developer", cats).map((d) => d.id);
+    expect(ids[0]).toBe("ts-master-project-overview");
+    expect(ids[1]).toBe("up:1");
+  });
+  it("keeps every file exactly once, uncertain uploads included", () => {
+    const ids = orderDocumentsForRole(items, "Backend Developer", cats).map((d) => d.id);
+    expect(ids.length).toBe(items.length);
+    expect(new Set(ids).size).toBe(items.length);
+    expect(categoriesForUpload("notes.txt")).toEqual([]);
   });
 });

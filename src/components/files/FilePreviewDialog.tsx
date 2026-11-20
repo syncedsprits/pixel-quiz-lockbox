@@ -8,10 +8,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getProject } from "@/data/projects";
 import type { ProjectDocument } from "@/data/types";
 import { fetchProtectedFile } from "@/lib/access/protected-fetch";
-import { downloadBlob, downloadUrl, responseError } from "@/lib/files/download";
+import { downloadUrl, responseError } from "@/lib/files/download";
 import { extractContent, ExtractionError } from "@/lib/files/extract";
 import { extractionSummary, type Extracted } from "@/lib/files/extracted";
 import { formatBytes, getExtension, getFormat } from "@/lib/files/formats";
+import { FLAGGED_MESSAGE, isScannableUpload, redactedFileName, TEXT_ONLY_REDACTION_EXTENSIONS } from "@/lib/files/masking";
 import { recordRecentFile } from "@/lib/files/recent";
 import type { StoredFile } from "@/lib/files/store";
 import { formatDate, formatDateTime } from "@/lib/format";
@@ -54,8 +55,8 @@ export async function downloadTarget(t: FileTarget) {
   const info = targetInfo(t);
   try {
     if (t.source === "reference") await downloadUrl(t.doc.url, t.doc.downloadName, t.doc.mimeType);
-    else if (t.file.blob) downloadBlob(t.file.blob, t.file.name);
-    else await downloadUrl(t.file.url, t.file.name, t.file.mimeType);
+    else if (!isScannableUpload(t.file.extension)) throw new Error(FLAGGED_MESSAGE);
+    else await downloadUrl(t.file.url, redactedFileName(t.file.name, t.file.extension), "text/plain");
     recordRecentFile({ projectId: info.projectId, fileId: info.id, name: info.name, kind: info.kind, source: t.source });
   } catch (e) {
     toast.error("Download failed", {
@@ -99,15 +100,16 @@ export function FilePreviewDialog({
           const buffer = await res.arrayBuffer();
           blob = new Blob([buffer], { type: target.doc.mimeType });
           extracted = await extractContent(info.ext, buffer, target.doc.mimeType);
-        } else if (target.file.blob && target.file.extracted) {
-          blob = target.file.blob;
-          extracted = target.file.extracted;
         } else {
+          // Shared uploads are always loaded as the server's redacted copy, never the original.
+          if (!isScannableUpload(info.ext)) throw new Error(FLAGGED_MESSAGE);
           const res = await fetchProtectedFile(target.file.url);
           if (!res.ok) throw new Error(await responseError(res, "The file couldn't be loaded"));
           const buffer = await res.arrayBuffer();
-          blob = new Blob([buffer], { type: target.file.mimeType });
-          extracted = await extractContent(info.ext, buffer, target.file.mimeType);
+          blob = new Blob([buffer], { type: "text/plain" });
+          extracted = (TEXT_ONLY_REDACTION_EXTENSIONS as readonly string[]).includes(info.ext)
+            ? { kind: "text", format: "plain", text: new TextDecoder().decode(buffer) }
+            : await extractContent(info.ext, buffer, target.file.mimeType);
         }
         url = URL.createObjectURL(blob);
         if (!cancelled) setState({ status: "ready", extracted, blobUrl: url });
@@ -128,8 +130,8 @@ export function FilePreviewDialog({
 
   const info = target ? targetInfo(target) : null;
   const project = info ? getProject(info.projectId) : undefined;
-  const isPdf = info?.ext === "pdf";
-  const isImage = info ? ["png", "jpg", "jpeg", "webp"].includes(info.ext) : false;
+  const isPdf = info?.ext === "pdf" && target?.source === "reference";
+  const isImage = info && target?.source === "reference" ? ["png", "jpg", "jpeg", "webp"].includes(info.ext) : false;
 
   return (
     <Dialog open={!!target} onOpenChange={onOpenChange}>
@@ -211,7 +213,7 @@ export function FilePreviewDialog({
                     ["Date", info.date],
                     [
                       "Stored in",
-                      target.source === "reference" ? "Supplied reference document (secure storage)" : "This browser only (local mode)",
+                      target.source === "reference" ? "Supplied reference document (secure storage)" : `Shared project upload by ${target.file.uploadedBy} · shown redacted`,
                     ],
                     [
                       "Processing",

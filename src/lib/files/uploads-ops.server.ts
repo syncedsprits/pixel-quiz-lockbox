@@ -2,6 +2,9 @@ import type { z } from "zod";
 
 import { getProject, projects } from "@/data/projects";
 import { getAccessSession, hasFileAccess, userFromRequest } from "@/lib/access/access.server";
+import { maskEmail } from "@/lib/access/quiz-grading";
+import { FLAGGED_MESSAGE } from "./masking";
+import { redactUpload } from "./redact.server";
 import { checkSignature, getFormat, validateFile, type FileCategory } from "./formats";
 import { canRemoveSharedUpload, canSeeSharedUploads, UPLOAD_SUMMARY_MAX } from "./shared-access";
 import type { deleteUploadSchema, listUploadsSchema, SharedUpload } from "./uploads-schemas";
@@ -27,11 +30,12 @@ type Row = {
   has_text: boolean;
   storage_path: string;
   uploaded_by: string;
+  uploader_email: string | null;
   created_at: string;
 };
 
 const COLUMNS =
-  "id, project_id, name, extension, mime_type, size_bytes, category, processing, summary, has_text, storage_path, uploaded_by, created_at";
+  "id, project_id, name, extension, mime_type, size_bytes, category, processing, summary, has_text, storage_path, uploaded_by, uploader_email, created_at";
 
 async function admin() {
   return (await import("@/integrations/supabase/client.server")).supabaseAdmin;
@@ -59,6 +63,7 @@ function toShared(r: Row, userId: string): SharedUpload {
     summary: r.summary,
     hasText: r.has_text,
     canRemove: canRemoveSharedUpload(r.uploaded_by, userId),
+    uploadedBy: r.uploaded_by === userId ? "you" : r.uploader_email ? maskEmail(r.uploader_email) : "a project member",
   };
 }
 
@@ -171,12 +176,15 @@ export async function serveUpload(request: Request, projectId: string, uploadId:
   const r = row as Row;
   const { data, error } = await sb.storage.from(BUCKET).download(r.storage_path);
   if (error || !data) return json(404, { error: "This file couldn't be found in storage." });
+  // Users only ever receive a redacted copy; the original stays private in storage.
+  const redacted = await redactUpload(r.name, r.extension, new Uint8Array(await data.arrayBuffer()));
+  if (!redacted.ok) return json(403, { error: FLAGGED_MESSAGE, flagged: true });
   const download = new URL(request.url).searchParams.get("download") === "1";
-  return new Response(data, {
+  return new Response(redacted.body, {
     status: 200,
     headers: {
-      "content-type": r.mime_type,
-      "content-disposition": `${download ? "attachment" : "inline"}; filename*=UTF-8''${encodeURIComponent(r.name)}`,
+      "content-type": redacted.contentType,
+      "content-disposition": `${download ? "attachment" : "inline"}; filename*=UTF-8''${encodeURIComponent(redacted.fileName)}`,
       "cache-control": "private, no-store",
       "x-content-type-options": "nosniff",
     },

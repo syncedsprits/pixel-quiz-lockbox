@@ -77,7 +77,9 @@ export async function runAskAssistant(data: z.infer<typeof assistantInputSchema>
         missingNames = project.documents.filter((d) => missing.includes(d.id)).map((d) => d.name);
         const lastUser = [...data.history].reverse().find((t) => t.role === "user")?.content ?? "";
         const query = lastUser ? `${data.question}\n\nPrevious question: ${lastUser.slice(0, 500)}` : data.question;
-        excerpts = await retrieve(project.id, indexed, query, 8);
+        const { maskSensitiveText } = await import("@/lib/files/masking");
+        // Safeguard: sensitive values never reach the AI model.
+        excerpts = (await retrieve(project.id, indexed, query, 8)).map((c) => ({ ...c, content: maskSensitiveText(c.content).text }));
       }
 
       const context = [
